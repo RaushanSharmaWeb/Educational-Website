@@ -1,0 +1,3989 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0b0f19" id="meta-theme-color" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="StudyPro" />
+  <title>Study With Pro — Personal Focus Portal</title>
+
+  <!-- Dynamic PWA Manifest Link (Populated via JS on Boot) -->
+  <link rel="manifest" id="pwa-manifest-link" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Poppins', 'sans-serif'],
+            display: ['Poppins', 'Inter', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- FontAwesome 6 Free CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <style>
+    :root,
+    html.dark {
+      --bg-primary: #0b0f19;
+      --bg-card: #111827;
+      --bg-elevated: #1e293b;
+      --bg-input: #070a12;
+      --border-color: #1f2937;
+      --text-primary: #f9fafb;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent-primary: #6366f1;
+    }
+
+    html.light {
+      --bg-primary: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-elevated: #f1f5f9;
+      --bg-input: #f8fafc;
+      --border-color: #e2e8f0;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --accent-primary: #4f46e5;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .swp-bg { background-color: var(--bg-primary); }
+    .swp-card { background-color: var(--bg-card); }
+    .swp-elevated { background-color: var(--bg-elevated); }
+    .swp-input { background-color: var(--bg-input); color: var(--text-primary); }
+    .swp-border { border-color: var(--border-color); }
+    .swp-text { color: var(--text-primary); }
+    .swp-text-sec { color: var(--text-secondary); }
+    .swp-text-muted { color: var(--text-muted); }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-primary); }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent-primary); }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* ==========================================================
+       CUSTOM SINGLETON VIDEO PLAYER & GESTURE OVERLAYS
+       ========================================================== */
+    #player-wrapper {
+      aspect-ratio: 16 / 9;
+      position: relative;
+      overflow: hidden;
+      background: #000000;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      width: 100%;
+    }
+
+    #player-wrapper:fullscreen,
+    #player-wrapper:-webkit-full-screen,
+    #player-wrapper:-ms-fullscreen {
+      width: 100vw !important;
+      height: 100vh !important;
+      max-height: 100vh !important;
+      aspect-ratio: auto !important;
+      border-radius: 0 !important;
+      border: none !important;
+    }
+
+    /* Sticky Mobile Video Container (< 768px) */
+    @media (max-width: 767px) {
+      #mobile-sticky-player-box {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        width: 100%;
+      }
+      #player-wrapper {
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+      }
+    }
+
+    /* Crop out native YouTube watermark/title overlays */
+    .yt-crop-frame {
+      position: absolute;
+      top: -64px;
+      left: 0;
+      width: 100%;
+      height: calc(100% + 128px);
+      pointer-events: none;
+    }
+
+    .yt-crop-frame iframe {
+      width: 100% !important;
+      height: 100% !important;
+      border: 0;
+      pointer-events: none;
+    }
+
+    /* Interactive Gesture & Protection Shield */
+    #player-shield {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    /* Double-Tap Left/Right Zones Ripple Effect */
+    @keyframes sideZonePulse {
+      0% { opacity: 0; transform: scale(0.85); }
+      40% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(1.08); }
+    }
+
+    .seek-zone-animate {
+      animation: sideZonePulse 0.55s ease-out forwards;
+    }
+
+    /* Center Play/Pause Ripple */
+    @keyframes centerPop {
+      0% { transform: translate(-50%, -50%) scale(0.55); opacity: 0.95; }
+      70% { transform: translate(-50%, -50%) scale(1.12); opacity: 0.75; }
+      100% { transform: translate(-50%, -50%) scale(1.38); opacity: 0; }
+    }
+
+    .ripple-animate {
+      animation: centerPop 0.52s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Bottom Control Bar */
+    #custom-controls {
+      z-index: 25;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      background: linear-gradient(to top, rgba(2, 6, 23, 0.96) 0%, rgba(2, 6, 23, 0.82) 65%, transparent 100%);
+    }
+
+    #custom-controls.controls-hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+    }
+
+    /* Custom Dual-Layer Seekbar (Buffered + Played + Thumb) */
+    .timeline-container {
+      position: relative;
+      width: 100%;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .timeline-track {
+      position: relative;
+      width: 100%;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.22);
+      border-radius: 999px;
+      overflow: hidden;
+      transition: height 0.15s ease;
+    }
+
+    .timeline-container:hover .timeline-track {
+      height: 7px;
+    }
+
+    #seek-buffered-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0%;
+      background: rgba(255, 255, 255, 0.42);
+      border-radius: 999px;
+      pointer-events: none;
+    }
+
+    #seek-played-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #6366f1, #a855f7);
+      border-radius: 999px;
+      pointer-events: none;
+    }
+
+    #seek-slider {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+      outline: none;
+      z-index: 5;
+    }
+
+    #seek-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #6366f1;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.95);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    #seek-slider:hover::-webkit-slider-thumb {
+      transform: scale(1.22);
+    }
+
+    #seek-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #6366f1;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.95);
+      cursor: pointer;
+    }
+
+    /* Volume Slider */
+    input[type="range"].vol-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255, 255, 255, 0.28);
+      height: 5px;
+      border-radius: 999px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    input[type="range"].vol-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #ffffff;
+      cursor: pointer;
+    }
+
+    @keyframes pulseLive {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.35); opacity: 0.4; }
+    }
+    .live-dot { animation: pulseLive 1.4s infinite ease-in-out; }
+
+    .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+
+  <!-- ==========================================================
+       TOP NAVBAR (BRAND + SEARCH + POMODORO + PWA INSTALL + THEME)
+       ========================================================== -->
+  <header class="sticky top-0 z-40 swp-card/95 backdrop-blur-md border-b swp-border transition-colors">
+    <div class="max-w-[1440px] mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-3">
+
+      <!-- Brand Logo -->
+      <div id="brand-logo-btn" class="flex items-center gap-2.5 cursor-pointer group shrink-0">
+        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform">
+          <i class="fa-solid fa-graduation-cap text-white text-base sm:text-lg"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="font-bold text-sm sm:text-lg tracking-tight font-display swp-text">
+              Study With Pro
+            </span>
+            <span class="hidden xl:inline-flex items-center px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 rounded-full">
+              Focus Portal
+            </span>
+          </div>
+          <p class="text-[10px] swp-text-sec hidden sm:block leading-none">Personal Distraction-Free Classroom</p>
+        </div>
+      </div>
+
+      <!-- Desktop Live Search Bar -->
+      <div class="flex-1 max-w-md hidden md:block">
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 swp-text-muted text-xs"></i>
+          <input
+            id="global-search-input"
+            type="text"
+            placeholder="Search batches, subjects, or exams..."
+            class="w-full pl-9 pr-8 py-2 swp-input border swp-border rounded-xl text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition-all"
+          />
+          <button
+            id="clear-search-btn"
+            type="button"
+            class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 swp-text-muted hover:text-indigo-400 text-xs"
+            title="Clear Search"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Built-In Compact Pomodoro Study Timer -->
+      <div class="relative flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 rounded-xl swp-elevated border swp-border shrink-0">
+        <button
+          id="pomodoro-config-btn"
+          type="button"
+          class="flex items-center gap-1.5 text-xs font-bold swp-text hover:text-indigo-400 transition"
+          title="Configure Study Timer"
+        >
+          <i class="fa-solid fa-brain text-indigo-400 text-xs"></i>
+          <span id="pomodoro-time-display" class="font-mono text-xs sm:text-sm tracking-tight">25:00</span>
+          <span id="pomodoro-mode-badge" class="hidden lg:inline-block text-[10px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-400 uppercase">Focus</span>
+        </button>
+
+        <button
+          id="pomodoro-toggle-btn"
+          type="button"
+          class="w-6 h-6 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center text-[10px] transition"
+          title="Start / Pause Timer"
+        >
+          <i id="pomodoro-toggle-icon" class="fa-solid fa-play"></i>
+        </button>
+
+        <button
+          id="pomodoro-reset-btn"
+          type="button"
+          class="w-6 h-6 rounded-lg hover:bg-gray-500/20 swp-text-sec flex items-center justify-center text-[10px] transition"
+          title="Reset Timer"
+        >
+          <i class="fa-solid fa-rotate-left"></i>
+        </button>
+
+        <!-- Pomodoro Popover -->
+        <div
+          id="pomodoro-popover"
+          class="hidden absolute top-12 right-0 w-64 rounded-2xl swp-card border swp-border shadow-2xl p-4 z-50 space-y-3"
+        >
+          <div class="flex items-center justify-between border-b swp-border pb-2">
+            <span class="text-xs font-bold swp-text flex items-center gap-1.5">
+              <i class="fa-solid fa-stopwatch text-indigo-400"></i>
+              Pomodoro Timer
+            </span>
+            <span id="pomodoro-session-counter" class="text-[10px] font-semibold text-emerald-400">0 Sessions</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-1.5 text-xs font-semibold">
+            <button type="button" data-pomo-preset="25" data-pomo-type="Focus" class="pomo-preset-btn py-1.5 rounded-lg bg-indigo-600 text-white">25m Focus</button>
+            <button type="button" data-pomo-preset="50" data-pomo-type="Deep" class="pomo-preset-btn py-1.5 rounded-lg swp-elevated swp-text-sec hover:text-indigo-400">50m Deep</button>
+            <button type="button" data-pomo-preset="5" data-pomo-type="Break" class="pomo-preset-btn py-1.5 rounded-lg swp-elevated swp-text-sec hover:text-emerald-400">5m Break</button>
+          </div>
+
+          <div class="flex items-center gap-2 pt-1">
+            <input
+              id="pomo-custom-mins"
+              type="number"
+              min="1"
+              max="180"
+              placeholder="Custom mins"
+              class="w-full px-2.5 py-1.5 rounded-lg swp-input border swp-border text-xs"
+            />
+            <button
+              id="pomo-apply-custom-btn"
+              type="button"
+              class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shrink-0"
+            >
+              Set
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Action Buttons -->
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <!-- PWA Install App Button -->
+        <button
+          id="pwa-install-btn"
+          type="button"
+          class="px-2.5 sm:px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-sm"
+          title="Install Study With Pro App"
+        >
+          <i class="fa-solid fa-mobile-screen-button"></i>
+          <span class="hidden sm:inline">Install App</span>
+        </button>
+
+        <!-- Theme Toggle Button -->
+        <button
+          id="theme-toggle-btn"
+          type="button"
+          class="w-9 h-9 rounded-xl swp-elevated border swp-border flex items-center justify-center swp-text hover:text-indigo-400 transition"
+          title="Toggle Light / Dark Theme"
+        >
+          <i id="theme-toggle-icon" class="fa-solid fa-sun text-amber-400 text-sm"></i>
+        </button>
+
+        <!-- All Batches Button -->
+        <button
+          id="nav-home-btn"
+          type="button"
+          class="px-2.5 sm:px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-sm"
+        >
+          <i class="fa-solid fa-layer-group"></i>
+          <span class="hidden lg:inline">Batches</span>
+        </button>
+
+        <!-- Admin Panel Button -->
+        <button
+          id="nav-admin-btn"
+          type="button"
+          class="px-2.5 sm:px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 swp-elevated border swp-border swp-text"
+        >
+          <i id="admin-lock-icon" class="fa-solid fa-lock text-amber-400"></i>
+          <span class="hidden lg:inline">Admin</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==========================================================
+       MAIN APPLICATION CONTAINER
+       ========================================================== -->
+  <main class="flex-1 max-w-[1440px] w-full mx-auto px-0 sm:px-6 py-0 sm:py-6">
+
+    <!-- ========================================================
+         VIEW 1: STUDENT HOME PANEL (BATCHES EXPLORER)
+         ======================================================== -->
+    <section id="view-home" class="px-4 sm:px-0 py-5 sm:py-0 space-y-6">
+
+      <!-- Hero Focus Banner -->
+      <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 border border-indigo-500/30 p-6 sm:p-8 shadow-xl text-white">
+        <div class="relative z-10 max-w-2xl space-y-3">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-semibold">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span>Personal Anti-Distraction Study Portal</span>
+          </div>
+          <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight font-display">
+            Deep Focus. Structured Subjects. <span class="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Zero Distractions.</span>
+          </h1>
+          <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">
+            Organize your courses by Batch → Subject → Chapter Playlists & Live Sessions. Use touch gestures (double-tap 10s seek, hold for 2x speed), take timestamped notes, and track syllabus progress.
+          </p>
+        </div>
+        <div class="hidden lg:flex items-center justify-center absolute right-10 top-1/2 -translate-y-1/2 opacity-15 pointer-events-none">
+          <i class="fa-solid fa-book-open-reader text-[140px] text-indigo-300"></i>
+        </div>
+      </div>
+
+      <!-- Mobile Search Bar -->
+      <div class="block md:hidden">
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 swp-text-muted text-xs"></i>
+          <input
+            id="mobile-search-input"
+            type="text"
+            placeholder="Search batches, subjects, or exams..."
+            class="w-full pl-9 pr-4 py-2.5 swp-card border swp-border rounded-xl text-xs swp-text focus:outline-none focus:border-indigo-500"
+          />
+        </div>
+      </div>
+
+      <!-- Global Auto-Resume Banner (Bound to study_resume_state) -->
+      <div id="home-resume-banner" class="hidden rounded-2xl swp-card border border-indigo-500/40 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-md">
+        <div class="flex items-center gap-3.5 min-w-0">
+          <div class="w-11 h-11 rounded-xl bg-indigo-600/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+            <i class="fa-solid fa-clock-rotate-left text-lg"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] uppercase tracking-wider font-bold text-indigo-400">Continue Where You Left Off</span>
+              <span id="home-resume-speed-badge" class="px-1.5 py-0.2 rounded bg-purple-500/15 text-purple-400 text-[10px] font-bold">1x</span>
+            </div>
+            <h3 id="home-resume-title" class="text-sm sm:text-base font-bold swp-text truncate">Lecture Title</h3>
+            <p id="home-resume-meta" class="text-xs swp-text-sec truncate">Batch • Subject • Saved at 00:00</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
+          <button
+            id="home-resume-btn"
+            type="button"
+            class="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25"
+          >
+            <i class="fa-solid fa-play"></i>
+            <span>Resume Now</span>
+          </button>
+          <button
+            id="home-resume-dismiss"
+            type="button"
+            class="w-9 h-9 rounded-xl swp-elevated swp-text-sec hover:text-red-400 flex items-center justify-center text-sm"
+            title="Dismiss Banner"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Category Filter Pills & Counter -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div id="category-pills-container" class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar"></div>
+        <div class="text-xs swp-text-sec font-medium shrink-0">
+          Showing <span id="batch-count-badge" class="text-indigo-400 font-bold">0</span> Batches
+        </div>
+      </div>
+
+      <!-- Loading Skeletons -->
+      <div id="batches-loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="rounded-2xl swp-card border swp-border overflow-hidden animate-pulse">
+          <div class="aspect-video bg-slate-800/60"></div>
+          <div class="p-5 space-y-3">
+            <div class="h-5 bg-slate-700/50 rounded w-3/4"></div>
+            <div class="h-3 bg-slate-700/50 rounded w-full"></div>
+            <div class="pt-3 flex gap-3">
+              <div class="h-10 bg-slate-700/50 rounded-xl flex-1"></div>
+              <div class="h-10 w-10 bg-slate-700/50 rounded-xl"></div>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-2xl swp-card border swp-border overflow-hidden animate-pulse hidden md:block">
+          <div class="aspect-video bg-slate-800/60"></div>
+          <div class="p-5 space-y-3">
+            <div class="h-5 bg-slate-700/50 rounded w-3/4"></div>
+            <div class="h-3 bg-slate-700/50 rounded w-full"></div>
+            <div class="pt-3 flex gap-3">
+              <div class="h-10 bg-slate-700/50 rounded-xl flex-1"></div>
+              <div class="h-10 w-10 bg-slate-700/50 rounded-xl"></div>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-2xl swp-card border swp-border overflow-hidden animate-pulse hidden lg:block">
+          <div class="aspect-video bg-slate-800/60"></div>
+          <div class="p-5 space-y-3">
+            <div class="h-5 bg-slate-700/50 rounded w-3/4"></div>
+            <div class="h-3 bg-slate-700/50 rounded w-full"></div>
+            <div class="pt-3 flex gap-3">
+              <div class="h-10 bg-slate-700/50 rounded-xl flex-1"></div>
+              <div class="h-10 w-10 bg-slate-700/50 rounded-xl"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div id="batches-empty" class="hidden rounded-2xl swp-card border swp-border p-10 text-center max-w-lg mx-auto my-6 space-y-4">
+        <div class="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center mx-auto text-indigo-400">
+          <i class="fa-solid fa-folder-open text-2xl"></i>
+        </div>
+        <h3 class="text-lg font-bold swp-text">No Study Batches Found</h3>
+        <p class="text-xs sm:text-sm swp-text-sec">
+          No batches match your search filter, or your database is empty. Open the Admin Panel to create a Batch, add Subjects, and attach Playlists.
+        </p>
+        <div class="flex items-center justify-center gap-3 pt-2">
+          <button id="empty-reset-filter-btn" type="button" class="px-4 py-2 rounded-xl swp-elevated swp-text text-xs font-semibold">Reset Filters</button>
+          <button id="empty-open-admin-btn" type="button" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white">
+            <i class="fa-solid fa-plus mr-1.5"></i>Open Admin Panel
+          </button>
+        </div>
+      </div>
+
+      <!-- Responsive Batch Cards Grid -->
+      <div id="batches-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </section>
+
+    <!-- ========================================================
+         VIEW 2: CLASSROOM VIEW (STICKY MOBILE PLAYER + GESTURES)
+         ======================================================== -->
+    <section id="view-classroom" class="hidden space-y-3 sm:space-y-4">
+
+      <!-- Top Classroom Navigation & Subject Tabs Bar -->
+      <div class="px-3 sm:px-0 pt-3 sm:pt-0 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <button
+              id="back-to-batches-btn"
+              type="button"
+              class="px-3 py-2 rounded-xl swp-card hover:border-indigo-500/50 border swp-border swp-text text-xs font-semibold flex items-center gap-1.5 transition shrink-0"
+            >
+              <i class="fa-solid fa-arrow-left text-indigo-400"></i>
+              <span>Batches</span>
+            </button>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <h2 id="classroom-batch-name" class="text-sm sm:text-lg font-bold swp-text truncate font-display">Batch Name</h2>
+                <span id="classroom-batch-exam" class="px-2 py-0.5 text-[10px] font-bold rounded bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 shrink-0">Exam</span>
+              </div>
+              <div class="flex items-center gap-2 text-[11px] swp-text-sec">
+                <span>Progress: <strong id="classroom-batch-progress-text" class="text-emerald-400">0%</strong></span>
+                <span class="hidden md:inline">• Double-tap sides: ±10s | Hold video: 2x Speed | Alt+N: Save Note</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <button
+              id="theater-mode-btn"
+              type="button"
+              class="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl swp-card border swp-border text-xs font-semibold swp-text hover:border-indigo-500 transition"
+              title="Toggle Theater / Focus Mode (T)"
+            >
+              <i class="fa-solid fa-panorama text-indigo-400"></i>
+              <span id="theater-mode-label">Theater Mode</span>
+            </button>
+
+            <button
+              id="classroom-share-btn"
+              type="button"
+              class="px-3 py-2 rounded-xl swp-card border swp-border text-xs font-semibold swp-text hover:border-indigo-500 flex items-center gap-1.5 transition"
+            >
+              <i class="fa-solid fa-share-nodes text-indigo-400"></i>
+              <span class="hidden sm:inline">Share</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Subject Selector Tabs -->
+        <div id="classroom-subjects-bar" class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar"></div>
+      </div>
+
+      <!-- MAIN CLASSROOM SPLIT-SCREEN CONTAINER -->
+      <div id="classroom-split-container" class="flex flex-col lg:flex-row gap-5 items-start">
+
+        <!-- LEFT COLUMN: Sticky Video Player on Mobile + Lecture Info + Notes -->
+        <div id="classroom-left-col" class="w-full lg:w-[68%] space-y-4">
+
+          <!-- Sticky Mobile Wrapper (< 768px stays pinned at top: 0, z-index: 50) -->
+          <div id="mobile-sticky-player-box" class="swp-bg">
+            <div id="player-wrapper" class="rounded-none sm:rounded-2xl border swp-border shadow-2xl">
+
+              <!-- Cropped YouTube Iframe Container (Singleton Mount Point) -->
+              <div class="yt-crop-frame">
+                <div id="yt-player"></div>
+              </div>
+
+              <!-- Interactive Gesture Shield Over Iframe -->
+              <div id="player-shield"></div>
+
+              <!-- Press & Hold 2x Speed Boost Badge (Top-Center) -->
+              <div
+                id="speed-2x-badge"
+                class="hidden absolute top-4 left-1/2 -translate-x-1/2 z-30 px-3.5 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-amber-400/50 text-amber-300 text-xs font-bold flex items-center gap-2 pointer-events-none shadow-2xl"
+              >
+                <i class="fa-solid fa-bolt animate-bounce"></i>
+                <span>Playing at 2x speed</span>
+              </div>
+
+              <!-- Double-Tap Left Zone Rewind Ripple (0% - 35% width) -->
+              <div
+                id="gesture-ripple-left"
+                class="hidden absolute inset-y-0 left-0 w-[36%] z-20 bg-white/15 backdrop-blur-[2px] rounded-r-full flex flex-col items-center justify-center text-white pointer-events-none"
+              >
+                <div class="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center mb-1">
+                  <i class="fa-solid fa-angles-left text-xl"></i>
+                </div>
+                <span id="gesture-left-text" class="text-xs font-extrabold tracking-wide">⏪ 10s</span>
+              </div>
+
+              <!-- Double-Tap Right Zone Forward Ripple (65% - 100% width) -->
+              <div
+                id="gesture-ripple-right"
+                class="hidden absolute inset-y-0 right-0 w-[36%] z-20 bg-white/15 backdrop-blur-[2px] rounded-l-full flex flex-col items-center justify-center text-white pointer-events-none"
+              >
+                <div class="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center mb-1">
+                  <i class="fa-solid fa-angles-right text-xl"></i>
+                </div>
+                <span id="gesture-right-text" class="text-xs font-extrabold tracking-wide">10s ⏩</span>
+              </div>
+
+              <!-- Center Play/Pause Ripple Feedback -->
+              <div
+                id="player-center-ripple"
+                class="hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-16 h-16 rounded-full bg-indigo-600/85 backdrop-blur-md text-white flex items-center justify-center pointer-events-none shadow-2xl"
+              >
+                <i id="player-center-ripple-icon" class="fa-solid fa-play text-2xl"></i>
+              </div>
+
+              <!-- SINGLE Custom Loading / Buffering Spinner Overlay -->
+              <div
+                id="player-loading-overlay"
+                class="hidden absolute inset-0 z-20 bg-black/60 backdrop-blur-[1px] flex flex-col items-center justify-center gap-2 pointer-events-none"
+              >
+                <div class="w-11 h-11 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <span id="player-loading-text" class="text-xs font-semibold text-slate-200">Buffering Stream...</span>
+              </div>
+
+              <!-- Responsive Speed & Quality Overlay Modal (Inside Player Wrapper so it works in Fullscreen & Mobile) -->
+              <div
+                id="player-menu-modal"
+                class="hidden absolute inset-0 z-30 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-3 sm:p-6"
+              >
+                <div class="w-full max-w-xs rounded-2xl bg-slate-900/95 border border-slate-700 p-4 text-white shadow-2xl space-y-3 max-h-[88%] overflow-y-auto">
+                  <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <span id="player-menu-title" class="text-xs font-bold uppercase tracking-wider text-indigo-400">Playback Settings</span>
+                    <button id="close-player-menu-btn" type="button" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-xs">
+                      <i class="fa-solid fa-xmark"></i>
+                    </button>
+                  </div>
+                  <div id="player-menu-options" class="grid grid-cols-2 gap-1.5 text-xs"></div>
+                </div>
+              </div>
+
+              <!-- Custom Bottom Control Bar -->
+              <div id="custom-controls" class="absolute bottom-0 inset-x-0 px-2.5 sm:px-4 pt-6 pb-2 sm:pb-3 flex flex-col gap-1.5 select-none">
+
+                <!-- Interactive Timeline / Seekbar with Buffered Progress & Hover Timestamp -->
+                <div id="timeline-wrapper" class="timeline-container group">
+                  <!-- Hover Timestamp Tooltip -->
+                  <div
+                    id="seek-hover-tooltip"
+                    class="hidden absolute -top-7 -translate-x-1/2 px-2 py-0.5 rounded bg-slate-900/95 border border-slate-700 text-white font-mono text-[10px] font-bold pointer-events-none shadow"
+                  >
+                    00:00
+                  </div>
+                  <div class="timeline-track">
+                    <div id="seek-buffered-bar"></div>
+                    <div id="seek-played-bar"></div>
+                  </div>
+                  <input
+                    id="seek-slider"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="0.05"
+                    value="0"
+                    aria-label="Seek Timeline"
+                  />
+                </div>
+
+                <!-- Touch-Friendly Controls Row -->
+                <div class="flex items-center justify-between gap-1 text-white">
+                  <!-- Left Controls -->
+                  <div class="flex items-center gap-0.5 sm:gap-1.5">
+                    <button
+                      id="ctrl-play-btn"
+                      type="button"
+                      class="min-w-[36px] min-h-[36px] rounded-xl hover:bg-white/15 flex items-center justify-center transition"
+                      title="Play / Pause (Space or K)"
+                    >
+                      <i id="ctrl-play-icon" class="fa-solid fa-play text-sm sm:text-base"></i>
+                    </button>
+
+                    <button
+                      id="ctrl-prev-btn"
+                      type="button"
+                      class="min-w-[34px] min-h-[36px] rounded-xl hover:bg-white/15 flex items-center justify-center transition text-slate-200 hover:text-white"
+                      title="Previous Lecture"
+                    >
+                      <i class="fa-solid fa-backward-step text-xs sm:text-sm"></i>
+                    </button>
+
+                    <button
+                      id="ctrl-rewind-btn"
+                      type="button"
+                      class="min-w-[34px] min-h-[36px] rounded-xl hover:bg-white/15 flex items-center justify-center transition text-slate-200 hover:text-white"
+                      title="Rewind 10s (J or Left Arrow)"
+                    >
+                      <i class="fa-solid fa-rotate-left text-xs sm:text-sm"></i>
+                    </button>
+
+                    <button
+                      id="ctrl-forward-btn"
+                      type="button"
+                      class="min-w-[34px] min-h-[36px] rounded-xl hover:bg-white/15 flex items-center justify-center transition text-slate-200 hover:text-white"
+                      title="Forward 10s (L or Right Arrow)"
+                    >
+                      <i class="fa-solid fa-rotate-right text-xs sm:text-sm"></i>
+                    </button>
+
+                    <button
+                      id="ctrl-next-btn"
+                      type="button"
+                      class="min-w-[34px] min-h-[36px] rounded-xl hover:bg-white/15 flex items-center justify-center transition text-slate-200 hover:text-white"
+                      title="Next Lecture"
+                    >
+                      <i class="fa-solid fa-forward-step text-xs sm:text-sm"></i>
+                    </button>
+
+                    <!-- Volume Button + Expandable Slider -->
+                    <div class="flex items-center gap-1 group/vol">
+                      <button
+                        id="ctrl-mute-btn"
+                        type="button"
+                        class="min-w-[34px] min-h-[36px] rounded-xl hover:bg-white/15 flex items-center justify-center transition"
+                        title="Mute / Unmute (M)"
+                      >
+                        <i id="ctrl-volume-icon" class="fa-solid fa-volume-high text-xs sm:text-sm"></i>
+                      </button>
+                      <input
+                        id="volume-slider"
+                        type="range"
+                        min="0"
+                        max="100"
+                        value="100"
+                        class="vol-slider hidden sm:block w-14 md:w-20"
+                        title="Volume"
+                      />
+                    </div>
+
+                    <!-- Time Display -->
+                    <div id="time-display-box" class="text-[10px] sm:text-xs font-mono text-slate-200 ml-1 shrink-0">
+                      <span id="current-time-text">00:00</span>
+                      <span class="text-slate-500">/</span>
+                      <span id="duration-time-text">00:00</span>
+                    </div>
+
+                    <!-- LIVE Stream Badge & Go Live Button -->
+                    <div id="live-stream-controls" class="hidden items-center gap-1.5 ml-1">
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold uppercase">
+                        <span class="w-1.5 h-1.5 rounded-full bg-white live-dot"></span>
+                        LIVE
+                      </span>
+                      <button
+                        id="sync-live-btn"
+                        type="button"
+                        class="px-2 py-0.5 rounded bg-white/15 hover:bg-indigo-600 text-[10px] font-semibold text-white transition"
+                      >
+                        Go Live
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Right Controls -->
+                  <div class="flex items-center gap-1 sm:gap-1.5">
+                    <!-- Quick Note Bookmark Button -->
+                    <button
+                      id="ctrl-quick-note-btn"
+                      type="button"
+                      class="min-h-[34px] px-2 rounded-lg bg-indigo-600/85 hover:bg-indigo-500 text-[11px] font-bold text-white transition flex items-center gap-1"
+                      title="Bookmark Timestamp Note (Alt + N)"
+                    >
+                      <i class="fa-solid fa-bookmark text-[10px]"></i>
+                      <span class="hidden md:inline">+Note</span>
+                    </button>
+
+                    <!-- Playback Speed Button -->
+                    <button
+                      id="ctrl-speed-btn"
+                      type="button"
+                      class="min-h-[34px] px-2 sm:px-2.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[11px] sm:text-xs font-bold text-white transition flex items-center gap-1"
+                      title="Playback Speed"
+                    >
+                      <i class="fa-solid fa-gauge-high text-indigo-400 text-[10px]"></i>
+                      <span id="speed-active-label">1x</span>
+                    </button>
+
+                    <!-- Quality Selector Button -->
+                    <button
+                      id="ctrl-quality-btn"
+                      type="button"
+                      class="min-h-[34px] px-2 sm:px-2.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[11px] sm:text-xs font-bold text-white transition flex items-center gap-1"
+                      title="Stream Quality"
+                    >
+                      <i class="fa-solid fa-sliders text-purple-400 text-[10px]"></i>
+                      <span id="quality-active-label">Auto</span>
+                    </button>
+
+                    <!-- Picture-in-Picture / Focus Toggle (Desktop/Tablet) -->
+                    <button
+                      id="ctrl-pip-btn"
+                      type="button"
+                      class="hidden sm:flex min-w-[34px] min-h-[36px] rounded-xl hover:bg-white/15 items-center justify-center transition"
+                      title="Mini / Theater View (T)"
+                    >
+                      <i class="fa-solid fa-tv text-xs"></i>
+                    </button>
+
+                    <!-- Custom Fullscreen Button -->
+                    <button
+                      id="ctrl-fullscreen-btn"
+                      type="button"
+                      class="min-w-[36px] min-h-[36px] rounded-xl hover:bg-white/15 flex items-center justify-center transition"
+                      title="Fullscreen (F)"
+                    >
+                      <i id="ctrl-fullscreen-icon" class="fa-solid fa-expand text-sm"></i>
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- Content Below Sticky Player -->
+          <div class="px-3 sm:px-0 space-y-4">
+
+            <!-- In-Classroom Saved Resume Prompt Banner -->
+            <div id="classroom-resume-prompt" class="hidden rounded-xl bg-indigo-950/70 border border-indigo-500/40 px-3.5 py-2.5 flex items-center justify-between gap-2 text-white">
+              <div class="flex items-center gap-2 text-xs min-w-0">
+                <i class="fa-solid fa-clock-rotate-left text-indigo-400 shrink-0"></i>
+                <span id="classroom-resume-text" class="truncate">Resume saved position?</span>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button id="classroom-resume-yes-btn" type="button" class="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">
+                  Resume
+                </button>
+                <button id="classroom-resume-close-btn" type="button" class="w-7 h-7 rounded-lg hover:bg-white/10 text-slate-300 flex items-center justify-center text-xs" title="Close">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Active Lecture Details & Mark Completed Card -->
+            <div class="rounded-2xl swp-card border swp-border p-4 sm:p-5 space-y-3 shadow-sm">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="space-y-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span id="active-lecture-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
+                      Lecture #1
+                    </span>
+                    <span id="active-lecture-subject" class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold swp-elevated swp-text-sec">
+                      Subject
+                    </span>
+                    <span id="active-lecture-topic" class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-400">
+                      Module
+                    </span>
+                  </div>
+                  <h1 id="active-lecture-title" class="text-base sm:text-xl font-bold swp-text leading-snug">
+                    Select a Subject and Lecture to begin studying
+                  </h1>
+                </div>
+
+                <button
+                  id="toggle-complete-btn"
+                  type="button"
+                  class="px-4 py-2.5 rounded-xl border swp-border swp-elevated hover:border-emerald-500/50 text-xs sm:text-sm font-semibold swp-text flex items-center justify-center gap-2 transition shrink-0"
+                >
+                  <i id="toggle-complete-icon" class="fa-regular fa-circle-check swp-text-muted"></i>
+                  <span id="toggle-complete-text">Mark Completed</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- WORKSPACE TABS: 1. TIMESTAMPED STUDY NOTES | 2. SHORTCUTS & OVERVIEW -->
+            <div class="rounded-2xl swp-card border swp-border overflow-hidden shadow-sm">
+              <div class="flex border-b swp-border swp-elevated/50">
+                <button
+                  type="button"
+                  data-workspace-tab="notes"
+                  class="workspace-tab-btn flex-1 py-3 px-4 text-xs sm:text-sm font-bold border-b-2 border-indigo-500 text-indigo-400 flex items-center justify-center gap-2 transition"
+                >
+                  <i class="fa-solid fa-bookmark"></i>
+                  <span>My Timestamped Notes</span>
+                  <span id="notes-count-pill" class="px-2 py-0.2 rounded-full text-[10px] bg-indigo-500/20 text-indigo-400">0</span>
+                </button>
+
+                <button
+                  type="button"
+                  data-workspace-tab="overview"
+                  class="workspace-tab-btn flex-1 py-3 px-4 text-xs sm:text-sm font-semibold border-b-2 border-transparent swp-text-sec hover:text-indigo-400 flex items-center justify-center gap-2 transition"
+                >
+                  <i class="fa-solid fa-circle-info"></i>
+                  <span>Gestures & Info</span>
+                </button>
+              </div>
+
+              <!-- TAB 1: Timestamped Study Notes -->
+              <div id="workspace-panel-notes" class="p-4 sm:p-5 space-y-4">
+                <form id="study-note-form" class="space-y-3">
+                  <div class="flex flex-col sm:flex-row gap-2.5">
+                    <input
+                      id="study-note-input"
+                      type="text"
+                      placeholder="Write a formula, key concept, or revision point... (Alt + N)"
+                      class="flex-1 px-3.5 py-2.5 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      type="submit"
+                      class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shrink-0 shadow-md shadow-indigo-600/20"
+                    >
+                      <i class="fa-solid fa-clock"></i>
+                      <span>Save at <span id="note-live-timestamp-btn" class="font-mono">[00:00]</span></span>
+                    </button>
+                  </div>
+                </form>
+
+                <div class="flex items-center justify-between text-xs swp-text-sec">
+                  <span>Click any <strong class="text-indigo-400 font-mono">[MM:SS]</strong> badge to seek directly:</span>
+                  <button id="export-notes-btn" type="button" class="text-indigo-400 hover:underline font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-download text-[10px]"></i>
+                    <span>Export .txt</span>
+                  </button>
+                </div>
+
+                <div id="study-notes-list" class="space-y-2.5 max-h-72 overflow-y-auto pr-1"></div>
+              </div>
+
+              <!-- TAB 2: Batch Overview & Touch Gesture Guide -->
+              <div id="workspace-panel-overview" class="hidden p-4 sm:p-5 space-y-4">
+                <div>
+                  <h4 class="text-xs font-bold uppercase tracking-wider swp-text-sec mb-1">Batch Description</h4>
+                  <p id="classroom-batch-desc" class="text-xs sm:text-sm swp-text leading-relaxed"></p>
+                </div>
+
+                <div class="border-t swp-border pt-3">
+                  <h4 class="text-xs font-bold uppercase tracking-wider swp-text-sec mb-2.5">Touch Gestures & Keyboard Shortcuts</h4>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Double-Tap Left Side</span><span class="font-bold text-indigo-400">⏪ Rewind 10s (Stackable)</span></div>
+                    <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Double-Tap Right Side</span><span class="font-bold text-indigo-400">Fast-Forward 10s ⏩</span></div>
+                    <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Press & Hold Video</span><span class="font-bold text-amber-400">⚡ Temporary 2x Speed</span></div>
+                    <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Keyboard Play / Seek</span><span class="font-mono text-indigo-400">Space, K, J, L, F, M</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Subject Modules (Playlists & Videos) + Active Lecture Queue -->
+        <div id="classroom-right-col" class="w-full lg:w-[32%] px-3 sm:px-0 space-y-4">
+
+          <!-- 1. Modules Selector inside Active Subject -->
+          <div class="rounded-2xl swp-card border swp-border p-4 space-y-3 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-400">Subject Modules</span>
+                <h3 id="sidebar-active-subject-title" class="text-sm sm:text-base font-bold swp-text">Chapters & Classes</h3>
+              </div>
+              <span id="sidebar-subject-progress-badge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                0% Done
+              </span>
+            </div>
+
+            <div class="w-full h-1.5 rounded-full swp-elevated overflow-hidden">
+              <div id="sidebar-subject-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 transition-all duration-300" style="width: 0%"></div>
+            </div>
+
+            <div id="subject-contents-selector" class="space-y-1.5 max-h-48 overflow-y-auto pr-1"></div>
+          </div>
+
+          <!-- 2. Active Playlist / Lecture Queue -->
+          <div class="rounded-2xl swp-card border swp-border flex flex-col overflow-hidden shadow-sm">
+            <div class="p-4 border-b swp-border space-y-3">
+              <div class="flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <h3 id="queue-header-title" class="font-bold text-sm swp-text truncate">Lecture Queue</h3>
+                    <span id="playlist-sync-status" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
+                      Ready
+                    </span>
+                  </div>
+                  <p class="text-[11px] swp-text-sec"><span id="sidebar-lecture-counter">0 Lectures</span></p>
+                </div>
+
+                <button
+                  id="classroom-refresh-playlist-btn"
+                  type="button"
+                  class="p-2 rounded-xl swp-elevated hover:text-indigo-400 text-xs swp-text-sec transition shrink-0"
+                  title="Re-sync Active Playlist"
+                >
+                  <i class="fa-solid fa-rotate"></i>
+                </button>
+              </div>
+
+              <!-- Filter Tabs -->
+              <div class="grid grid-cols-3 gap-1 swp-input p-1 rounded-xl border swp-border text-[11px] font-semibold">
+                <button type="button" data-tab="all" class="sidebar-tab-btn py-1.5 px-2 rounded-lg bg-indigo-600 text-white transition truncate">All</button>
+                <button type="button" data-tab="pending" class="sidebar-tab-btn py-1.5 px-2 rounded-lg swp-text-sec hover:text-indigo-400 transition truncate">Pending</button>
+                <button type="button" data-tab="completed" class="sidebar-tab-btn py-1.5 px-2 rounded-lg swp-text-sec hover:text-indigo-400 transition truncate">Completed ✅</button>
+              </div>
+
+              <div class="relative">
+                <i class="fa-solid fa-filter absolute left-3 top-1/2 -translate-y-1/2 swp-text-muted text-xs"></i>
+                <input
+                  id="playlist-search-input"
+                  type="text"
+                  placeholder="Filter lectures in this module..."
+                  class="w-full pl-8 pr-3 py-1.5 rounded-lg swp-input border swp-border text-xs focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+            </div>
+
+            <div id="playlist-items-container" class="divide-y swp-border max-h-[450px] overflow-y-auto"></div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         VIEW 3: ADMIN PANEL (HIERARCHICAL CRUD)
+         ======================================================== -->
+    <section id="view-admin" class="hidden px-4 sm:px-0 py-5 sm:py-0 space-y-8">
+
+      <!-- Admin Top Banner -->
+      <div class="rounded-2xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border border-purple-500/30 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white shadow-xl">
+        <div class="space-y-1">
+          <div class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-purple-400">
+            <i class="fa-solid fa-sitemap"></i>
+            <span>Hierarchical Course Architect</span>
+          </div>
+          <h1 class="text-xl sm:text-2xl font-bold font-display">Manage Batches → Subjects → Playlists & Videos</h1>
+          <p class="text-xs sm:text-sm text-slate-300">All updates sync live with Firebase Realtime Database.</p>
+        </div>
+        <button
+          id="admin-logout-btn"
+          type="button"
+          class="px-4 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-200 text-xs font-semibold flex items-center gap-2 self-start sm:self-center transition"
+        >
+          <i class="fa-solid fa-lock"></i>
+          <span>Lock Admin</span>
+        </button>
+      </div>
+
+      <!-- 3-STEP HIERARCHICAL BUILDER GRID -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- STEP 1: CREATE / EDIT BATCH -->
+        <div class="lg:col-span-4 rounded-2xl swp-card border swp-border p-5 space-y-4 shadow-sm">
+          <div class="flex items-center justify-between border-b swp-border pb-3">
+            <div class="flex items-center gap-2.5">
+              <span class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 font-bold text-xs flex items-center justify-center">1</span>
+              <h2 id="batch-form-heading" class="text-base font-bold swp-text">Create / Edit Batch</h2>
+            </div>
+            <span id="batch-edit-mode-badge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400">Editing</span>
+          </div>
+
+          <form id="batch-crud-form" class="space-y-3.5">
+            <input type="hidden" id="batch-id-input" value="" />
+            <div>
+              <label class="block text-xs font-semibold swp-text-sec mb-1">Batch Name *</label>
+              <input id="batch-name-input" type="text" required placeholder="e.g., Target JEE 2027" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold swp-text-sec mb-1">Target Exam *</label>
+                <input id="batch-exam-input" type="text" required placeholder="JEE / NEET / CS" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold swp-text-sec mb-1">Language *</label>
+                <select id="batch-lang-input" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500">
+                  <option value="Hinglish">Hinglish</option>
+                  <option value="English">English</option>
+                  <option value="Hindi">Hindi</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold swp-text-sec mb-1">Thumbnail Image URL (Optional)</label>
+              <input id="batch-thumb-input" type="url" placeholder="https://images.unsplash.com/..." class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
+              <div class="mt-2 flex items-center gap-3 p-2 rounded-xl swp-input border swp-border">
+                <img id="batch-thumb-preview" src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80" alt="Preview" class="w-20 aspect-video object-cover rounded-lg border swp-border shrink-0" />
+                <span class="text-[11px] swp-text-sec leading-tight">Live 16:9 cover preview</span>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold swp-text-sec mb-1">Batch Description *</label>
+              <textarea id="batch-desc-input" rows="3" required placeholder="Structured chapter-wise playlists and personal revision workspace..." class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500"></textarea>
+            </div>
+
+            <div class="flex items-center gap-2 pt-1">
+              <button type="submit" class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span id="save-batch-btn-text">Save Batch</span>
+              </button>
+              <button type="button" id="cancel-edit-btn" class="hidden py-2.5 px-3 rounded-xl swp-elevated swp-text text-xs font-semibold">Cancel</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- STEP 2: MANAGE SUBJECTS -->
+        <div id="admin-subject-card" class="lg:col-span-4 rounded-2xl swp-card border swp-border p-5 space-y-4 shadow-sm">
+          <div class="flex items-center justify-between border-b swp-border pb-3">
+            <div class="flex items-center gap-2.5">
+              <span class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 font-bold text-xs flex items-center justify-center">2</span>
+              <div>
+                <h2 class="text-base font-bold swp-text">Manage Subjects</h2>
+                <p class="text-[11px] swp-text-sec">Add subjects inside a Batch</p>
+              </div>
+            </div>
+            <span id="subject-edit-badge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400">Editing</span>
+          </div>
+
+          <form id="subject-crud-form" class="space-y-3">
+            <input type="hidden" id="subject-edit-id" value="" />
+            <div>
+              <label class="block text-xs font-semibold swp-text-sec mb-1">1. Select Batch *</label>
+              <select id="admin-subject-batch-select" required class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500">
+                <option value="">-- Choose Batch --</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold swp-text-sec mb-1">2. Subject Name *</label>
+              <input id="subject-name-input" type="text" required placeholder="e.g., Physics, Organic Chemistry, Maths" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold swp-text-sec mb-1">Subject Icon</label>
+                <select id="subject-icon-input" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500">
+                  <option value="fa-atom">⚛️ Physics</option>
+                  <option value="fa-flask">🧪 Chemistry</option>
+                  <option value="fa-square-root-variable">📐 Mathematics</option>
+                  <option value="fa-dna">🧬 Biology</option>
+                  <option value="fa-laptop-code">💻 Coding / CS</option>
+                  <option value="fa-bolt">⚡ Revision</option>
+                  <option value="fa-book">📘 General</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold swp-text-sec mb-1">Accent Color</label>
+                <select id="subject-color-input" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500">
+                  <option value="indigo">Indigo</option>
+                  <option value="purple">Purple</option>
+                  <option value="emerald">Emerald</option>
+                  <option value="amber">Amber</option>
+                  <option value="rose">Rose</option>
+                  <option value="cyan">Cyan</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button type="submit" class="flex-1 py-2 px-4 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-plus"></i>
+                <span id="subject-save-btn-text">Add Subject</span>
+              </button>
+              <button type="button" id="subject-cancel-edit-btn" class="hidden py-2 px-3 rounded-xl swp-elevated swp-text text-xs font-semibold">Cancel</button>
+            </div>
+          </form>
+
+          <div class="border-t swp-border pt-3 space-y-2">
+            <div class="flex items-center justify-between text-xs swp-text-sec">
+              <span>Subjects in Batch:</span>
+              <span id="admin-subjects-count" class="font-bold text-purple-400">0</span>
+            </div>
+            <div id="admin-subjects-list" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+          </div>
+        </div>
+
+        <!-- STEP 3: ADD MULTIPLE PLAYLISTS & SINGLE VIDEOS -->
+        <div id="admin-content-card" class="lg:col-span-4 rounded-2xl swp-card border swp-border p-5 space-y-4 shadow-sm">
+          <div class="flex items-center justify-between border-b swp-border pb-3">
+            <div class="flex items-center gap-2.5">
+              <span class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center justify-center">3</span>
+              <div>
+                <h2 class="text-base font-bold swp-text">Add Playlists & Videos</h2>
+                <p class="text-[11px] swp-text-sec">Attach chapters or single classes to a Subject</p>
+              </div>
+            </div>
+          </div>
+
+          <form id="content-crud-form" class="space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-xs font-semibold swp-text-sec mb-1">Batch *</label>
+                <select id="admin-content-batch-select" required class="w-full px-2.5 py-2 rounded-xl swp-input border swp-border text-xs focus:outline-none focus:border-indigo-500">
+                  <option value="">-- Batch --</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold swp-text-sec mb-1">Subject *</label>
+                <select id="admin-content-subject-select" required class="w-full px-2.5 py-2 rounded-xl swp-input border swp-border text-xs focus:outline-none focus:border-indigo-500">
+                  <option value="">-- Subject --</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold swp-text-sec mb-1">Content Type *</label>
+              <select id="content-type-input" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500">
+                <option value="playlist">📚 YouTube Playlist (Full Chapter)</option>
+                <option value="video">🎬 Single Recorded Lecture (Video URL/ID)</option>
+                <option value="live">🔴 Live Stream Session (Live URL/ID)</option>
+              </select>
+            </div>
+
+            <div>
+              <label id="content-title-label" class="block text-xs font-semibold swp-text-sec mb-1">Chapter / Playlist Title *</label>
+              <input id="content-title-input" type="text" required placeholder="e.g., Ch 01: Electrostatics Playlist" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
+            </div>
+
+            <div>
+              <label id="content-url-label" class="block text-xs font-semibold swp-text-sec mb-1">YouTube Playlist URL or ID *</label>
+              <input id="content-url-input" type="text" required placeholder="https://youtube.com/playlist?list=PL... or watch?v=..." class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
+            </div>
+
+            <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-md">
+              <i class="fa-solid fa-circle-plus"></i>
+              <span>Add to Subject</span>
+            </button>
+          </form>
+
+          <div class="border-t swp-border pt-3 space-y-2">
+            <div class="flex items-center justify-between text-xs swp-text-sec">
+              <span>Modules in Subject:</span>
+              <span id="admin-contents-count" class="font-bold text-emerald-400">0</span>
+            </div>
+            <div id="admin-contents-list" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BATCHES DIRECTORY + GLOBAL SETTINGS -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-8 rounded-2xl swp-card border swp-border overflow-hidden shadow-sm">
+          <div class="p-5 border-b swp-border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h2 class="text-base font-bold swp-text">All Study Batches Directory</h2>
+              <p class="text-xs swp-text-sec">Edit batches, manage subjects, or delete batches</p>
+            </div>
+            <span id="admin-total-batches" class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 self-start sm:self-center">0 Batches</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b swp-border swp-elevated/60 text-[11px] font-bold uppercase tracking-wider swp-text-sec">
+                  <th class="py-3 px-4">Batch</th>
+                  <th class="py-3 px-4">Exam</th>
+                  <th class="py-3 px-4">Hierarchy</th>
+                  <th class="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-batches-tbody" class="divide-y swp-border text-xs sm:text-sm"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="lg:col-span-4 rounded-2xl swp-card border swp-border p-5 space-y-4 shadow-sm self-start">
+          <div class="flex items-center gap-2.5 border-b swp-border pb-3">
+            <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+              <i class="fa-solid fa-gear"></i>
+            </div>
+            <div>
+              <h2 class="text-base font-bold swp-text">Portal Settings</h2>
+              <p class="text-[11px] swp-text-sec">Admin PIN & Optional YouTube API v3 Key</p>
+            </div>
+          </div>
+
+          <form id="global-settings-form" class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-semibold swp-text-sec mb-1">Admin Security PIN *</label>
+              <input id="settings-pin-input" type="password" required minlength="4" placeholder="Default: 1234" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold swp-text-sec mb-1">YouTube Data API v3 Key <span class="swp-text-muted font-normal">(Optional)</span></label>
+              <input id="settings-ytkey-input" type="text" placeholder="AIzaSy... (Blank = Free Auto-Sync)" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
+            </div>
+            <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-key"></i>
+              <span>Save Global Settings</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==========================================================
+       MODALS (ADMIN PIN, DELETE CONFIRMATION, PWA INSTALL GUIDE)
+       ========================================================== -->
+  <div id="pin-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-sm rounded-2xl swp-card border swp-border p-6 shadow-2xl space-y-5">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+            <i class="fa-solid fa-user-shield text-lg"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold swp-text">Admin Authentication</h3>
+            <p class="text-xs swp-text-sec">Enter PIN to manage Batches & Subjects</p>
+          </div>
+        </div>
+        <button id="close-pin-modal-btn" type="button" class="swp-text-sec hover:text-red-400">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <form id="pin-verify-form" class="space-y-4">
+        <div>
+          <input id="pin-modal-input" type="password" placeholder="••••" required class="w-full text-center tracking-[0.5em] text-xl font-bold py-3 rounded-xl swp-input border swp-border focus:outline-none focus:border-indigo-500" />
+          <p class="text-[11px] swp-text-muted text-center mt-1.5">Default PIN is <span class="font-mono font-bold">1234</span></p>
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-sm shadow-lg transition">
+          Unlock Admin Workspace
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div id="delete-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl swp-card border swp-border p-6 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400 shrink-0">
+          <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold swp-text">Delete Batch Permanently?</h3>
+          <p id="delete-modal-batch-name" class="text-xs swp-text-sec">All subjects and playlists inside this batch will be removed.</p>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <button id="cancel-delete-btn" type="button" class="px-4 py-2 rounded-xl swp-elevated text-xs font-semibold swp-text">Cancel</button>
+        <button id="confirm-delete-btn" type="button" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-xs font-bold text-white flex items-center gap-1.5">
+          <i class="fa-solid fa-trash-can"></i>
+          <span>Yes, Delete</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PWA Install Instructions Modal -->
+  <div id="pwa-install-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl swp-card border swp-border p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+            <i class="fa-solid fa-mobile-screen-button text-xl"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold swp-text">Install Study With Pro App</h3>
+            <p class="text-xs swp-text-sec">Launch directly from your home screen in full-screen standalone mode</p>
+          </div>
+        </div>
+        <button id="close-pwa-modal-btn" type="button" class="swp-text-sec hover:text-red-400">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2.5 text-xs swp-text-sec">
+        <div class="p-3 rounded-xl swp-input border swp-border space-y-1">
+          <div class="font-bold swp-text flex items-center gap-1.5"><i class="fa-brands fa-apple text-sm"></i> iOS / iPadOS (Safari)</div>
+          <p>Tap the <strong>Share</strong> icon <i class="fa-solid fa-arrow-up-from-bracket mx-0.5 text-indigo-400"></i> in the bottom bar, then select <strong>"Add to Home Screen"</strong>.</p>
+        </div>
+        <div class="p-3 rounded-xl swp-input border swp-border space-y-1">
+          <div class="font-bold swp-text flex items-center gap-1.5"><i class="fa-brands fa-android text-emerald-400 text-sm"></i> Android / Desktop Chrome & Edge</div>
+          <p>Open the browser menu <strong>(⋮)</strong> and tap <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.</p>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-1">
+        <button id="got-it-pwa-modal-btn" type="button" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white">
+          Got It
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none"></div>
+
+  <!-- FOOTER -->
+  <footer class="border-t swp-border py-5 mt-12 text-center text-xs swp-text-muted">
+    <div class="max-w-[1440px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>© 2026 <span class="swp-text font-semibold">Study With Pro</span> — Personal Focus & Anti-Distraction Study Portal.</p>
+      <p class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span>Singleton Player & Realtime Sync Active</span>
+      </p>
+    </div>
+  </footer>
+
+  <!-- ==========================================================
+       APPLICATION CORE LOGIC (SINGLETON YT PLAYER + PWA + FIREBASE)
+       ========================================================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+    import { getDatabase, ref, set, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js";
+
+    // ----------------------------------------------------------
+    // 1. FIREBASE INITIALIZATION
+    // ----------------------------------------------------------
+    const firebaseConfig = {
+      apiKey: "AIzaSyA-8OSQlYP091sHcZQfCJmFFXsKxJxDC8Q",
+      authDomain: "education-921c2.firebaseapp.com",
+      databaseURL: "https://education-921c2-default-rtdb.firebaseio.com",
+      projectId: "education-921c2",
+      storageBucket: "education-921c2.firebasestorage.app",
+      messagingSenderId: "529451695233",
+      appId: "1:529451695233:web:4940277f4d953c05886180"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // ----------------------------------------------------------
+    // 2. PROGRESSIVE WEB APP (PWA) MANIFEST & SERVICE WORKER
+    // ----------------------------------------------------------
+    let deferredInstallPrompt = null;
+
+    function createAppIconDataUrl(size = 192) {
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+
+      const grad = ctx.createLinearGradient(0, 0, size, size);
+      grad.addColorStop(0, "#4f46e5");
+      grad.addColorStop(1, "#7c3aed");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, size, size, size * 0.22);
+      ctx.fill();
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `bold ${Math.floor(size * 0.42)}px Poppins, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("SP", size / 2, size / 2 + size * 0.03);
+      return canvas.toDataURL("image/png");
+    }
+
+    function initProgressiveWebApp() {
+      try {
+        const icon192 = createAppIconDataUrl(192);
+        const icon512 = createAppIconDataUrl(512);
+
+        const manifestObj = {
+          name: "Study With Pro",
+          short_name: "StudyPro",
+          description: "Personal Anti-Distraction Study Portal",
+          start_url: window.location.origin + window.location.pathname,
+          display: "standalone",
+          orientation: "any",
+          background_color: "#0b0f19",
+          theme_color: "#6366f1",
+          icons: [
+            { src: icon192, sizes: "192x192", type: "image/png", purpose: "any maskable" },
+            { src: icon512, sizes: "512x512", type: "image/png", purpose: "any maskable" }
+          ]
+        };
+
+        const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: "application/manifest+json" });
+        const manifestUrl = URL.createObjectURL(manifestBlob);
+        document.getElementById("pwa-manifest-link").setAttribute("href", manifestUrl);
+
+        // Register Service Worker via Blob URL with safe fallback
+        if ("serviceWorker" in navigator && (window.location.protocol === "https:" || window.location.hostname === "localhost")) {
+          const swCode = `
+            const CACHE_NAME = 'study-with-pro-v2';
+            self.addEventListener('install', (e) => self.skipWaiting());
+            self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+            self.addEventListener('fetch', (e) => {
+              if (e.request.method !== 'GET') return;
+              e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+            });
+          `;
+          const swBlob = new Blob([swCode], { type: "application/javascript" });
+          const swUrl = URL.createObjectURL(swBlob);
+          navigator.serviceWorker.register(swUrl).catch(() => {});
+        }
+      } catch (e) {}
+
+      // Hide install button if already running in standalone mode
+      if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true) {
+        document.getElementById("pwa-install-btn").classList.add("hidden");
+      }
+
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        const btn = document.getElementById("pwa-install-btn");
+        btn.classList.remove("hidden");
+        btn.classList.add("ring-2", "ring-emerald-400");
+      });
+
+      window.addEventListener("appinstalled", () => {
+        deferredInstallPrompt = null;
+        document.getElementById("pwa-install-btn").classList.add("hidden");
+        showToast("Study With Pro installed successfully!", "success");
+      });
+    }
+
+    // ----------------------------------------------------------
+    // 3. GLOBAL STATE & RESUME SCHEMA (study_resume_state)
+    // ----------------------------------------------------------
+    const DEFAULT_THUMBNAIL = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80";
+    const DEFAULT_CATEGORIES = ["All", "JEE", "NEET", "Class 12", "Class 10", "Coding"];
+
+    const SUBJECT_COLOR_STYLES = {
+      indigo: { bg: "bg-indigo-500/15", text: "text-indigo-400", border: "border-indigo-500/40", activeBg: "bg-indigo-600" },
+      purple: { bg: "bg-purple-500/15", text: "text-purple-400", border: "border-purple-500/40", activeBg: "bg-purple-600" },
+      emerald: { bg: "bg-emerald-500/15", text: "text-emerald-400", border: "border-emerald-500/40", activeBg: "bg-emerald-600" },
+      amber: { bg: "bg-amber-500/15", text: "text-amber-400", border: "border-amber-500/40", activeBg: "bg-amber-600" },
+      rose: { bg: "bg-rose-500/15", text: "text-rose-400", border: "border-rose-500/40", activeBg: "bg-rose-600" },
+      cyan: { bg: "bg-cyan-500/15", text: "text-cyan-400", border: "border-cyan-500/40", activeBg: "bg-cyan-600" }
+    };
+
+    function safeJsonParse(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    const state = {
+      theme: localStorage.getItem("swp_theme") || "dark",
+      currentView: "home",
+      isTheaterMode: false,
+      batches: {},
+      studyNotesAll: safeJsonParse("swp_study_notes", {}),
+      adminPin: "1234",
+      ytApiKey: "",
+      isAdminUnlocked: sessionStorage.getItem("swp_admin_unlocked") === "true",
+      selectedCategory: "All",
+      searchQuery: "",
+
+      // Active Classroom Hierarchy
+      activeBatchId: null,
+      activeSubjectId: null,
+      activeContentId: null,
+      activePlaylistId: null,
+      activeLectureList: [],
+      activeLectureIndex: 0,
+      activeVideoId: null,
+      activeSidebarTab: "all",
+      playlistSearchQuery: "",
+      pendingDeleteBatchId: null,
+      deepLinkHandled: false,
+
+      // Exact Resume State & Memory Caches
+      preferredSpeed: parseFloat(localStorage.getItem("swp_preferred_speed") || "1") || 1,
+      activeQuality: "default",
+      studyResumeState: safeJsonParse("study_resume_state", null),
+      batchResumeMap: safeJsonParse("swp_batch_resume_map", {}),
+      videoTimestamps: safeJsonParse("swp_video_timestamps", {}),
+      completedLectures: safeJsonParse("swp_completed_lectures", {}),
+      oembedCache: safeJsonParse("swp_oembed_cache", {}),
+      playlistVideosCache: safeJsonParse("swp_playlist_videos_cache", {}),
+
+      // Pomodoro State
+      pomoSecondsLeft: 25 * 60,
+      pomoTotalSeconds: 25 * 60,
+      pomoModeLabel: "Focus",
+      pomoRunning: false,
+      pomoSessionsDone: parseInt(localStorage.getItem("swp_pomo_sessions") || "0", 10) || 0
+    };
+
+    // ----------------------------------------------------------
+    // 4. STRICT SINGLETON YOUTUBE PLAYER (window.activeYTPlayer)
+    // ----------------------------------------------------------
+    window.activeYTPlayer = null;
+    window.isYTPlayerReady = false;
+    let ytReadyQueue = [];
+    let progressTimer = null;
+    let controlsHideTimer = null;
+    let isScrubbing = false;
+    let lastScrubTime = 0;
+    let lastThrottleSaveTime = 0;
+    let currentVideoIsLive = false;
+    let playlistPollTimer = null;
+    let pomoInterval = null;
+
+    // Load YouTube IFrame API Script Strictly Once
+    function loadYouTubeIframeApiScriptOnce() {
+      if (window.YT && window.YT.Player) return;
+      if (document.getElementById("yt-iframe-api-script")) return;
+      const tag = document.createElement("script");
+      tag.id = "yt-iframe-api-script";
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(tag);
+    }
+
+    window.onYouTubeIframeAPIReady = () => {
+      createOrReuseSingletonPlayer();
+    };
+
+    function whenSingletonPlayerReady(callback) {
+      if (window.activeYTPlayer && window.isYTPlayerReady && typeof window.activeYTPlayer.loadVideoById === "function") {
+        callback(window.activeYTPlayer);
+        return;
+      }
+      ytReadyQueue.push(callback);
+      loadYouTubeIframeApiScriptOnce();
+      if (window.YT && window.YT.Player && !window.activeYTPlayer) {
+        createOrReuseSingletonPlayer();
+      }
+    }
+
+    function createOrReuseSingletonPlayer() {
+      if (window.activeYTPlayer) return window.activeYTPlayer;
+
+      const mountEl = document.getElementById("yt-player");
+      if (!mountEl || !window.YT || !window.YT.Player) return null;
+
+      window.activeYTPlayer = new window.YT.Player("yt-player", {
+        height: "100%",
+        width: "100%",
+        playerVars: {
+          controls: 0,
+          modestbranding: 1,
+          rel: 0,
+          showinfo: 0,
+          iv_load_policy: 3,
+          disablekb: 1,
+          fs: 0,
+          playsinline: 1,
+          origin: window.location.origin
+        },
+        events: {
+          onReady: () => {
+            window.isYTPlayerReady = true;
+            startSingletonProgressLoop();
+            while (ytReadyQueue.length > 0) {
+              const cb = ytReadyQueue.shift();
+              try { cb(window.activeYTPlayer); } catch (e) {}
+            }
+          },
+          onStateChange: handleSingletonPlayerStateChange,
+          onError: (e) => {
+            setBufferingSpinner(false);
+            showToast(`Stream error (Code ${e.data}). Try another lecture.`, "warning");
+          }
+        }
+      });
+
+      return window.activeYTPlayer;
+    }
+
+    function setBufferingSpinner(visible, message = "Buffering Stream...") {
+      const overlay = document.getElementById("player-loading-overlay");
+      const textEl = document.getElementById("player-loading-text");
+      if (!overlay) return;
+      if (textEl) textEl.textContent = message;
+      overlay.classList.toggle("hidden", !visible);
+    }
+
+    function syncPlayPauseButtonIcon(playerState) {
+      const playIcon = document.getElementById("ctrl-play-icon");
+      if (!playIcon || !window.YT) return;
+      if (playerState === window.YT.PlayerState.PLAYING) {
+        playIcon.className = "fa-solid fa-pause text-sm sm:text-base";
+      } else if (playerState === window.YT.PlayerState.ENDED) {
+        playIcon.className = "fa-solid fa-rotate-right text-sm sm:text-base";
+      } else {
+        playIcon.className = "fa-solid fa-play text-sm sm:text-base";
+      }
+    }
+
+    function handleSingletonPlayerStateChange(event) {
+      const YTState = window.YT.PlayerState;
+      const st = event.data;
+
+      // Always keep play/pause button icon strictly synced with actual player state
+      syncPlayPauseButtonIcon(st);
+
+      if (st === YTState.PLAYING) {
+        setBufferingSpinner(false);
+        // Apply user's preferred playback rate (unless holding 2x gesture)
+        if (!isHolding2x && window.activeYTPlayer.setPlaybackRate) {
+          const targetRate = state.preferredSpeed || 1;
+          if (window.activeYTPlayer.getPlaybackRate() !== targetRate) {
+            window.activeYTPlayer.setPlaybackRate(targetRate);
+          }
+        }
+        scheduleControlsAutoHide();
+      } else if (st === YTState.PAUSED) {
+        setBufferingSpinner(false);
+        showControlsBar();
+        persistStudyResumeState(true);
+      } else if (st === YTState.BUFFERING) {
+        setBufferingSpinner(true, "Buffering Stream...");
+      } else if (st === YTState.CUED) {
+        setBufferingSpinner(false);
+      } else if (st === YTState.ENDED) {
+        setBufferingSpinner(false);
+        showControlsBar();
+        if (state.activeBatchId && state.activeVideoId) {
+          toggleLectureCompleted(state.activeBatchId, state.activeVideoId, true);
+        }
+        playNextLecture();
+      }
+    }
+
+    function startSingletonProgressLoop() {
+      if (progressTimer) clearInterval(progressTimer);
+      progressTimer = setInterval(() => {
+        if (!window.activeYTPlayer || !window.isYTPlayerReady || state.currentView !== "classroom") return;
+        if (typeof window.activeYTPlayer.getCurrentTime !== "function") return;
+
+        const current = window.activeYTPlayer.getCurrentTime() || 0;
+        const duration = window.activeYTPlayer.getDuration() || 0;
+        const loadedFrac = typeof window.activeYTPlayer.getVideoLoadedFraction === "function"
+          ? (window.activeYTPlayer.getVideoLoadedFraction() || 0)
+          : 0;
+
+        // Update live timestamp inside the "+Note" button
+        const noteBtnTime = document.getElementById("note-live-timestamp-btn");
+        if (noteBtnTime) noteBtnTime.textContent = `[${formatTime(current)}]`;
+
+        // Detect Live Stream
+        const activeLecture = state.activeLectureList[state.activeLectureIndex];
+        const playerState = window.activeYTPlayer.getPlayerState ? window.activeYTPlayer.getPlayerState() : -1;
+        currentVideoIsLive = Boolean((activeLecture && activeLecture.isLive) || (playerState === 1 && duration === 0));
+
+        const timeBox = document.getElementById("time-display-box");
+        const liveControls = document.getElementById("live-stream-controls");
+        if (currentVideoIsLive) {
+          liveControls.classList.remove("hidden");
+          liveControls.classList.add("flex");
+          timeBox.classList.add("hidden");
+        } else {
+          liveControls.classList.add("hidden");
+          liveControls.classList.remove("flex");
+          timeBox.classList.remove("hidden");
+        }
+
+        // Update Buffered Bar
+        const bufferedBar = document.getElementById("seek-buffered-bar");
+        if (bufferedBar) {
+          bufferedBar.style.width = `${Math.min(100, Math.max(0, loadedFrac * 100))}%`;
+        }
+
+        // Do not overwrite seekbar while user is actively scrubbing
+        const recentlyScrubbed = Date.now() - lastScrubTime < 350;
+        if (!isScrubbing && !recentlyScrubbed) {
+          document.getElementById("current-time-text").textContent = formatTime(current);
+          document.getElementById("duration-time-text").textContent = formatTime(duration);
+
+          const seekSlider = document.getElementById("seek-slider");
+          const playedBar = document.getElementById("seek-played-bar");
+          if (duration > 0) {
+            const pct = Math.min(100, Math.max(0, (current / duration) * 100));
+            seekSlider.value = String(pct);
+            if (playedBar) playedBar.style.width = `${pct}%`;
+          } else if (currentVideoIsLive) {
+            seekSlider.value = "100";
+            if (playedBar) playedBar.style.width = "100%";
+          }
+        }
+
+        // Throttle-save currentTime every 3 seconds while playing
+        if (playerState === 1 && current > 2 && Date.now() - lastThrottleSaveTime >= 3000) {
+          persistStudyResumeState(false, current);
+        }
+      }, 500);
+    }
+
+    // ----------------------------------------------------------
+    // 5. EXACT RESUME ENGINE (study_resume_state)
+    // ----------------------------------------------------------
+    function persistStudyResumeState(syncToFirebase = false, overrideSeconds = null) {
+      if (!state.activeBatchId || !state.activeVideoId) return;
+      lastThrottleSaveTime = Date.now();
+
+      const currentSec = overrideSeconds !== null
+        ? overrideSeconds
+        : (window.activeYTPlayer && window.isYTPlayerReady && typeof window.activeYTPlayer.getCurrentTime === "function"
+            ? window.activeYTPlayer.getCurrentTime()
+            : 0);
+
+      const cleanTime = Math.round((currentSec || 0) * 10) / 10;
+      const activeLecture = state.activeLectureList[state.activeLectureIndex];
+
+      const resumePayload = {
+        batchId: state.activeBatchId,
+        subjectId: state.activeSubjectId || "",
+        playlistId: state.activePlaylistId || null,
+        contentId: state.activeContentId || null,
+        videoId: state.activeVideoId,
+        videoTitle: activeLecture ? activeLecture.title : "Lecture",
+        timestamp: cleanTime,
+        playbackRate: state.preferredSpeed || 1,
+        updatedAt: Date.now()
+      };
+
+      state.studyResumeState = resumePayload;
+      state.batchResumeMap[state.activeBatchId] = resumePayload;
+      state.videoTimestamps[state.activeVideoId] = Math.floor(cleanTime);
+
+      localStorage.setItem("study_resume_state", JSON.stringify(resumePayload));
+      localStorage.setItem("swp_batch_resume_map", JSON.stringify(state.batchResumeMap));
+      localStorage.setItem("swp_video_timestamps", JSON.stringify(state.videoTimestamps));
+
+      if (syncToFirebase) {
+        set(ref(db, "study_resume_state"), resumePayload).catch(() => {});
+      }
+    }
+
+    function executeExactResume(savedState) {
+      if (!savedState || !savedState.batchId || !savedState.videoId) return;
+      const batch = state.batches[savedState.batchId];
+      if (!batch) {
+        showToast("Saved batch no longer exists.", "warning");
+        return;
+      }
+
+      // Restore saved playback speed preference
+      if (savedState.playbackRate) {
+        applyPreferredPlaybackSpeed(savedState.playbackRate, false);
+      }
+
+      openClassroomBatch(
+        savedState.batchId,
+        savedState.subjectId,
+        savedState.contentId,
+        savedState.videoId,
+        Math.floor(savedState.timestamp || 0),
+        true
+      );
+    }
+
+    // ----------------------------------------------------------
+    // 6. MULTI-TAP SEEK & 2X LONG-PRESS GESTURE ENGINE
+    // ----------------------------------------------------------
+    let lastTapTime = 0;
+    let singleTapTimeout = null;
+    let accumulatedRewind = 0;
+    let accumulatedForward = 0;
+    let rewindResetTimeout = null;
+    let forwardResetTimeout = null;
+    let hold2xTimeout = null;
+    let isHolding2x = false;
+    let speedBeforeHold = 1;
+
+    function initPlayerGestureShield() {
+      const shield = document.getElementById("player-shield");
+      const wrapper = document.getElementById("player-wrapper");
+      if (!shield || !wrapper) return;
+
+      wrapper.addEventListener("contextmenu", (e) => e.preventDefault());
+
+      // Press & Hold (> 400ms) for Temporary 2x Speed
+      const startHoldCheck = () => {
+        if (hold2xTimeout) clearTimeout(hold2xTimeout);
+        hold2xTimeout = setTimeout(() => {
+          if (!window.activeYTPlayer || !window.isYTPlayerReady) return;
+          const st = window.activeYTPlayer.getPlayerState ? window.activeYTPlayer.getPlayerState() : -1;
+          if (st === window.YT.PlayerState.PLAYING) {
+            isHolding2x = true;
+            speedBeforeHold = state.preferredSpeed || 1;
+            window.activeYTPlayer.setPlaybackRate(2);
+            document.getElementById("speed-2x-badge").classList.remove("hidden");
+          }
+        }, 400);
+      };
+
+      const endHoldCheck = () => {
+        if (hold2xTimeout) {
+          clearTimeout(hold2xTimeout);
+          hold2xTimeout = null;
+        }
+        if (isHolding2x) {
+          isHolding2x = false;
+          document.getElementById("speed-2x-badge").classList.add("hidden");
+          if (window.activeYTPlayer && window.isYTPlayerReady && typeof window.activeYTPlayer.setPlaybackRate === "function") {
+            window.activeYTPlayer.setPlaybackRate(speedBeforeHold);
+          }
+        }
+      };
+
+      shield.addEventListener("pointerdown", startHoldCheck);
+      shield.addEventListener("pointerup", endHoldCheck);
+      shield.addEventListener("pointercancel", endHoldCheck);
+      shield.addEventListener(" pointerleave", endHoldCheck);
+
+      // Single Tap vs Left/Right Double-Tap Detection
+      shield.addEventListener("click", (e) => {
+        // Ignore click if it was a long-press 2x release
+        showControlsBar();
+
+        const rect = shield.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const pctX = clickX / rect.width;
+        const now = Date.now();
+        const timeDiff = now - lastTapTime;
+
+        if (timeDiff < 310 && timeDiff > 25) {
+          // Double-Tap Detected!
+          if (singleTapTimeout) {
+            clearTimeout(singleTapTimeout);
+            singleTapTimeout = null;
+          }
+          lastTapTime = now;
+
+          if (pctX <= 0.35) {
+            // Left 0%-35%: Stackable Rewind 10s
+            triggerStackableRewind();
+          } else if (pctX >= 0.65) {
+            // Right 65%-100%: Stackable Forward 10s
+            triggerStackableForward();
+          } else {
+            // Center Double-Tap: Fullscreen Toggle
+            toggleCustomFullscreen();
+          }
+        } else {
+          // Single Tap Candidate
+          lastTapTime = now;
+          if (singleTapTimeout) clearTimeout(singleTapTimeout);
+          singleTapTimeout = setTimeout(() => {
+            singleTapTimeout = null;
+            togglePlayPauseWithRipple(true);
+          }, 260);
+        }
+      });
+    }
+
+    function triggerStackableRewind() {
+      accumulatedRewind += 10;
+      seekRelative(-10, false);
+
+      const zone = document.getElementById("gesture-ripple-left");
+      const label = document.getElementById("gesture-left-text");
+      if (zone && label) {
+        label.textContent = `⏪ ${accumulatedRewind}s`;
+        zone.classList.remove("hidden", "seek-zone-animate");
+        void zone.offsetWidth;
+        zone.classList.add("seek-zone-animate");
+      }
+
+      if (rewindResetTimeout) clearTimeout(rewindResetTimeout);
+      rewindResetTimeout = setTimeout(() => {
+        accumulatedRewind = 0;
+        if (zone) zone.classList.add("hidden");
+      }, 650);
+    }
+
+    function triggerStackableForward() {
+      accumulatedForward += 10;
+      seekRelative(10, false);
+
+      const zone = document.getElementById("gesture-ripple-right");
+      const label = document.getElementById("gesture-right-text");
+      if (zone && label) {
+        label.textContent = `${accumulatedForward}s ⏩`;
+        zone.classList.remove("hidden", "seek-zone-animate");
+        void zone.offsetWidth;
+        zone.classList.add("seek-zone-animate");
+      }
+
+      if (forwardResetTimeout) clearTimeout(forwardResetTimeout);
+      forwardResetTimeout = setTimeout(() => {
+        accumulatedForward = 0;
+        if (zone) zone.classList.add("hidden");
+      }, 650);
+    }
+
+    // ----------------------------------------------------------
+    // 7. UTILITY & URL PARSER FUNCTIONS
+    // ----------------------------------------------------------
+    function extractPlaylistId(input) {
+      if (!input || typeof input !== "string") return "";
+      const trimmed = input.trim();
+      const urlMatch = trimmed.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+      if (urlMatch && urlMatch[1]) return urlMatch[1];
+      if (/^(PL|UU|LL|FL|RD|OLAK5uy_)[a-zA-Z0-9_-]{10,}$/.test(trimmed)) return trimmed;
+      if (/^[a-zA-Z0-9_-]{13,64}$/.test(trimmed) && !trimmed.includes("/")) return trimmed;
+      return "";
+    }
+
+    function extractVideoId(input) {
+      if (!input || typeof input !== "string") return "";
+      const trimmed = input.trim();
+      if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return trimmed;
+      const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|live|shorts)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+      const match = trimmed.match(regex);
+      return match && match[1] ? match[1] : "";
+    }
+
+    function formatTime(seconds) {
+      if (!seconds || isNaN(seconds) || seconds < 0 || !isFinite(seconds)) return "00:00";
+      const total = Math.floor(seconds);
+      const hrs = Math.floor(total / 3600);
+      const mins = Math.floor((total % 3600) / 60);
+      const secs = total % 60;
+      const pMins = String(mins).padStart(2, "0");
+      const pSecs = String(secs).padStart(2, "0");
+      return hrs > 0 ? `${String(hrs).padStart(2, "0")}:${pMins}:${pSecs}` : `${pMins}:${pSecs}`;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function showToast(message, type = "info") {
+      const container = document.getElementById("toast-container");
+      if (!container) return;
+      const iconMap = {
+        success: "fa-circle-check text-emerald-400",
+        error: "fa-circle-exclamation text-red-400",
+        warning: "fa-triangle-exclamation text-amber-400",
+        info: "fa-bolt text-indigo-400"
+      };
+      const borderMap = {
+        success: "border-emerald-500/40",
+        error: "border-red-500/40",
+        warning: "border-amber-500/40",
+        info: "border-indigo-500/40"
+      };
+      const toast = document.createElement("div");
+      toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-900/95 backdrop-blur-md border ${borderMap[type] || borderMap.info} shadow-2xl text-xs sm:text-sm font-medium text-white transition-all duration-300`;
+      toast.innerHTML = `<i class="fa-solid ${iconMap[type] || iconMap.info} text-base shrink-0"></i><span class="flex-1 leading-snug">${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add("opacity-0", "translate-x-4");
+        setTimeout(() => toast.remove(), 300);
+      }, 2800);
+    }
+
+    // ----------------------------------------------------------
+    // 8. LIGHT & DARK THEME ENGINE
+    // ----------------------------------------------------------
+    function applyTheme(theme) {
+      state.theme = theme === "light" ? "light" : "dark";
+      localStorage.setItem("swp_theme", state.theme);
+      const htmlEl = document.documentElement;
+      const icon = document.getElementById("theme-toggle-icon");
+      const metaTheme = document.getElementById("meta-theme-color");
+
+      if (state.theme === "light") {
+        htmlEl.classList.remove("dark");
+        htmlEl.classList.add("light");
+        if (icon) icon.className = "fa-solid fa-moon text-indigo-600 text-sm";
+        if (metaTheme) metaTheme.setAttribute("content", "#f8fafc");
+      } else {
+        htmlEl.classList.remove("light");
+        htmlEl.classList.add("dark");
+        if (icon) icon.className = "fa-solid fa-sun text-amber-400 text-sm";
+        if (metaTheme) metaTheme.setAttribute("content", "#0b0f19");
+      }
+    }
+
+    // ----------------------------------------------------------
+    // 9. POMODORO FOCUS TIMER
+    // ----------------------------------------------------------
+    function updatePomodoroUI() {
+      document.getElementById("pomodoro-time-display").textContent = formatTime(state.pomoSecondsLeft);
+      document.getElementById("pomodoro-mode-badge").textContent = state.pomoModeLabel;
+      document.getElementById("pomodoro-toggle-icon").className = state.pomoRunning ? "fa-solid fa-pause" : "fa-solid fa-play";
+      document.getElementById("pomodoro-session-counter").textContent = `${state.pomoSessionsDone} Sessions`;
+    }
+
+    function togglePomodoroTimer() {
+      if (state.pomoRunning) {
+        state.pomoRunning = false;
+        if (pomoInterval) clearInterval(pomoInterval);
+      } else {
+        state.pomoRunning = true;
+        if (pomoInterval) clearInterval(pomoInterval);
+        pomoInterval = setInterval(() => {
+          if (state.pomoSecondsLeft > 0) {
+            state.pomoSecondsLeft--;
+            updatePomodoroUI();
+          } else {
+            clearInterval(pomoInterval);
+            state.pomoRunning = false;
+            if (state.pomoModeLabel !== "Break") {
+              state.pomoSessionsDone++;
+              localStorage.setItem("swp_pomo_sessions", String(state.pomoSessionsDone));
+              showToast("Focus session complete! Take a short break.", "success");
+            } else {
+              showToast("Break over! Ready for your next lecture.", "info");
+            }
+            updatePomodoroUI();
+          }
+        }, 1000);
+      }
+      updatePomodoroUI();
+    }
+
+    function setPomodoroPreset(minutes, label = "Focus") {
+      if (pomoInterval) clearInterval(pomoInterval);
+      state.pomoRunning = false;
+      const mins = Math.max(1, Math.min(180, parseInt(minutes, 10) || 25));
+      state.pomoTotalSeconds = mins * 60;
+      state.pomoSecondsLeft = mins * 60;
+      state.pomoModeLabel = label;
+      updatePomodoroUI();
+    }
+
+    // ----------------------------------------------------------
+    // 10. HIERARCHICAL NORMALIZER & PROGRESS TRACKING
+    // ----------------------------------------------------------
+    function getNormalizedSubjects(batch) {
+      if (!batch) return {};
+      const subjects = {};
+
+      if (batch.subjects && typeof batch.subjects === "object") {
+        Object.entries(batch.subjects).forEach(([subId, sub]) => {
+          if (sub && typeof sub === "object") {
+            subjects[subId] = {
+              id: sub.id || subId,
+              name: sub.name || "Subject",
+              icon: sub.icon || "fa-book",
+              color: sub.color || "indigo",
+              createdAt: sub.createdAt || 0,
+              contents: sub.contents && typeof sub.contents === "object" ? sub.contents : {}
+            };
+          }
+        });
+      }
+
+      const hasLegacyPlaylist = Boolean(batch.playlistId);
+      const hasLegacyCustom = batch.customVideos && Object.keys(batch.customVideos).length > 0;
+      if (Object.keys(subjects).length === 0 && (hasLegacyPlaylist || hasLegacyCustom)) {
+        const legacyContents = {};
+        if (hasLegacyPlaylist) {
+          legacyContents["legacy_main_pl"] = {
+            id: "legacy_main_pl",
+            title: `${batch.name || "Course"} — Main Playlist`,
+            type: "playlist",
+            ytId: extractPlaylistId(batch.playlistId),
+            addedAt: 1
+          };
+        }
+        if (hasLegacyCustom) {
+          Object.entries(batch.customVideos).forEach(([cvId, cv]) => {
+            if (!cv) return;
+            legacyContents[cvId] = {
+              id: cvId,
+              title: cv.title || "Lecture",
+              type: cv.isLive ? "live" : "video",
+              ytId: cv.ytVideoId,
+              addedAt: cv.addedAt || 2
+            };
+          });
+        }
+        subjects["legacy_general"] = {
+          id: "legacy_general",
+          name: batch.targetExam || "Core Syllabus",
+          icon: "fa-atom",
+          color: "indigo",
+          createdAt: 1,
+          contents: legacyContents
+        };
+      }
+
+      return subjects;
+    }
+
+    function isLectureCompleted(batchId, videoId) {
+      if (!batchId || !videoId) return false;
+      return Boolean(state.completedLectures[`${batchId}_${videoId}`]);
+    }
+
+    function calculateSubjectProgress(batchId, subjectObj) {
+      if (!batchId || !subjectObj || !subjectObj.contents) return { completed: 0, total: 0, percent: 0 };
+      const videoIds = new Set();
+
+      Object.values(subjectObj.contents).forEach((content) => {
+        if (!content || !content.ytId) return;
+        if (content.type === "video" || content.type === "live") {
+          videoIds.add(content.ytId);
+        } else if (content.type === "playlist") {
+          const cached = state.playlistVideosCache[content.ytId];
+          if (Array.isArray(cached) && cached.length > 0) {
+            cached.forEach((v) => videoIds.add(v));
+          } else {
+            videoIds.add(`pl_${content.ytId}`);
+          }
+        }
+      });
+
+      const total = videoIds.size;
+      if (total === 0) return { completed: 0, total: 0, percent: 0 };
+      let completed = 0;
+      videoIds.forEach((vid) => {
+        if (isLectureCompleted(batchId, vid)) completed++;
+      });
+      return { completed, total, percent: Math.round((completed / total) * 100) };
+    }
+
+    function calculateBatchProgress(batch) {
+      if (!batch) return { completed: 0, total: 0, percent: 0 };
+      const subjects = getNormalizedSubjects(batch);
+      let completed = 0;
+      let total = 0;
+      Object.values(subjects).forEach((s) => {
+        const st = calculateSubjectProgress(batch.id, s);
+        completed += st.completed;
+        total += st.total;
+      });
+      return { completed, total, percent: total > 0 ? Math.round((completed / total) * 100) : 0 };
+    }
+
+    // ----------------------------------------------------------
+    // 11. FIREBASE REALTIME LISTENERS
+    // ----------------------------------------------------------
+    function initFirebaseSync() {
+      const settingsRef = ref(db, "settings");
+      onValue(settingsRef, async (snapshot) => {
+        const data = snapshot.val();
+        if (!data) {
+          await set(settingsRef, { adminPin: "1234", ytApiKey: "" });
+        } else {
+          state.adminPin = data.adminPin || "1234";
+          state.ytApiKey = data.ytApiKey || "";
+        }
+        document.getElementById("settings-pin-input").value = state.adminPin;
+        document.getElementById("settings-ytkey-input").value = state.ytApiKey;
+      });
+
+      const resumeRef = ref(db, "study_resume_state");
+      onValue(resumeRef, (snapshot) => {
+        const remoteResume = snapshot.val();
+        if (remoteResume && remoteResume.videoId) {
+          const localTime = state.studyResumeState?.updatedAt || 0;
+          if ((remoteResume.updatedAt || 0) > localTime) {
+            state.studyResumeState = remoteResume;
+            localStorage.setItem("study_resume_state", JSON.stringify(remoteResume));
+            if (state.currentView === "home") renderHomeResumeBanner();
+          }
+        }
+      });
+
+      const batchesRef = ref(db, "batches");
+      onValue(batchesRef, (snapshot) => {
+        state.batches = snapshot.val() || {};
+        document.getElementById("batches-loading").classList.add("hidden");
+
+        renderCategoryPills();
+        renderBatchesGrid();
+        renderAdminBatchesTable();
+        populateAdminBatchDropdowns();
+        renderHomeResumeBanner();
+
+        if (state.currentView === "classroom" && state.activeBatchId && state.batches[state.activeBatchId]) {
+          renderClassroomSubjectsBar();
+          renderSubjectContentsSelector();
+        }
+
+        if (!state.deepLinkHandled) {
+          state.deepLinkHandled = true;
+          const params = new URLSearchParams(window.location.search);
+          const bId = params.get("batch");
+          if (bId && state.batches[bId]) openClassroomBatch(bId);
+        }
+      });
+
+      const notesRef = ref(db, "studyNotes");
+      onValue(notesRef, (snapshot) => {
+        state.studyNotesAll = snapshot.val() || {};
+        localStorage.setItem("swp_study_notes", JSON.stringify(state.studyNotesAll));
+        if (state.currentView === "classroom") renderStudyNotesList();
+      });
+    }
+
+    // ----------------------------------------------------------
+    // 12. VIEW SWITCHING & HOME PANEL RENDERING
+    // ----------------------------------------------------------
+    function switchView(viewName) {
+      state.currentView = viewName;
+      document.getElementById("view-home").classList.toggle("hidden", viewName !== "home");
+      document.getElementById("view-classroom").classList.toggle("hidden", viewName !== "classroom");
+      document.getElementById("view-admin").classList.toggle("hidden", viewName !== "admin");
+
+      if (viewName !== "classroom" && window.activeYTPlayer && window.isYTPlayerReady && typeof window.activeYTPlayer.pauseVideo === "function") {
+        try {
+          persistStudyResumeState(true);
+          window.activeYTPlayer.pauseVideo();
+        } catch (e) {}
+      }
+
+      document.getElementById("admin-lock-icon").className = state.isAdminUnlocked
+        ? "fa-solid fa-lock-open text-emerald-400"
+        : "fa-solid fa-lock text-amber-400";
+
+      if (viewName === "home") {
+        renderBatchesGrid();
+        renderHomeResumeBanner();
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function renderHomeResumeBanner() {
+      const banner = document.getElementById("home-resume-banner");
+      if (!banner) return;
+
+      const saved = state.studyResumeState;
+      if (!saved || !saved.batchId || !saved.videoId || !state.batches[saved.batchId]) {
+        banner.classList.add("hidden");
+        return;
+      }
+
+      const batch = state.batches[saved.batchId];
+      const subjects = getNormalizedSubjects(batch);
+      const subName = subjects[saved.subjectId]?.name || batch.targetExam || "Course";
+
+      document.getElementById("home-resume-title").textContent = saved.videoTitle || "Continue Lecture";
+      document.getElementById("home-resume-meta").textContent = `${batch.name} • ${subName} • Left off at ${formatTime(saved.timestamp || 0)}`;
+      document.getElementById("home-resume-speed-badge").textContent = `${saved.playbackRate || state.preferredSpeed || 1}x`;
+      banner.classList.remove("hidden");
+
+      document.getElementById("home-resume-btn").onclick = () => {
+        executeExactResume(saved);
+      };
+    }
+
+    function renderCategoryPills() {
+      const container = document.getElementById("category-pills-container");
+      if (!container) return;
+      const tags = new Set(DEFAULT_CATEGORIES);
+      Object.values(state.batches).forEach((b) => {
+        if (b && b.targetExam) tags.add(b.targetExam.trim());
+      });
+
+      container.innerHTML = "";
+      Array.from(tags).forEach((cat) => {
+        const active = state.selectedCategory.toLowerCase() === cat.toLowerCase();
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = active
+          ? "px-4 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shrink-0 transition"
+          : "px-4 py-1.5 rounded-full text-xs font-semibold swp-card hover:border-indigo-500/50 swp-text-sec border swp-border shrink-0 transition";
+        btn.textContent = cat;
+        btn.addEventListener("click", () => {
+          state.selectedCategory = cat;
+          renderCategoryPills();
+          renderBatchesGrid();
+        });
+        container.appendChild(btn);
+      });
+    }
+
+    function renderBatchesGrid() {
+      const grid = document.getElementById("batches-grid");
+      const emptyBox = document.getElementById("batches-empty");
+      const countBadge = document.getElementById("batch-count-badge");
+      if (!grid) return;
+
+      const allBatches = Object.values(state.batches).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      const q = state.searchQuery.trim().toLowerCase();
+
+      const filtered = allBatches.filter((batch) => {
+        if (!batch) return false;
+        const subjects = getNormalizedSubjects(batch);
+        const subNames = Object.values(subjects).map((s) => s.name.toLowerCase()).join(" ");
+        const matchesCat =
+          state.selectedCategory === "All" ||
+          (batch.targetExam && batch.targetExam.toLowerCase().includes(state.selectedCategory.toLowerCase())) ||
+          (batch.name && batch.name.toLowerCase().includes(state.selectedCategory.toLowerCase()));
+        const matchesSearch =
+          !q ||
+          (batch.name && batch.name.toLowerCase().includes(q)) ||
+          (batch.targetExam && batch.targetExam.toLowerCase().includes(q)) ||
+          subNames.includes(q);
+        return matchesCat && matchesSearch;
+      });
+
+      countBadge.textContent = String(filtered.length);
+      grid.innerHTML = "";
+
+      if (filtered.length === 0) {
+        emptyBox.classList.remove("hidden");
+        return;
+      }
+      emptyBox.classList.add("hidden");
+
+      filtered.forEach((batch) => {
+        const subjectsList = Object.values(getNormalizedSubjects(batch));
+        const progress = calculateBatchProgress(batch);
+
+        const subjectBadgesHtml = subjectsList.length > 0
+          ? subjectsList.slice(0, 4).map((sub) => {
+              const c = SUBJECT_COLOR_STYLES[sub.color] || SUBJECT_COLOR_STYLES.indigo;
+              return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold ${c.bg} ${c.text} border ${c.border}">
+                <i class="fa-solid ${escapeHtml(sub.icon)} text-[9px]"></i>
+                ${escapeHtml(sub.name)}
+              </span>`;
+            }).join("")
+          : `<span class="text-[11px] swp-text-muted italic">No subjects added yet</span>`;
+
+        const card = document.createElement("div");
+        card.className = "group rounded-2xl swp-card border swp-border hover:border-indigo-500/60 overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col";
+        card.innerHTML = `
+          <div class="relative aspect-video bg-slate-900 overflow-hidden">
+            <img
+              src="${escapeHtml(batch.thumbnail || DEFAULT_THUMBNAIL)}"
+              alt="${escapeHtml(batch.name)}"
+              onerror="this.onerror=null;this.src='${DEFAULT_THUMBNAIL}';"
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-black/25"></div>
+            <span class="absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-600/95 text-white shadow">${escapeHtml(batch.targetExam || "General")}</span>
+            <span class="absolute top-3 right-3 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-900/80 text-slate-100 border border-white/15">${escapeHtml(batch.language || "Hinglish")}</span>
+            <div class="absolute bottom-3 inset-x-3 flex items-center justify-between text-white text-[11px]">
+              <span class="font-semibold"><i class="fa-solid fa-layer-group text-indigo-400 mr-1"></i>${subjectsList.length} Subjects</span>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-bold text-[10px]">${progress.percent}% Done</span>
+            </div>
+          </div>
+          <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+            <div class="space-y-2.5">
+              <h3 class="text-lg font-bold swp-text group-hover:text-indigo-400 transition-colors line-clamp-1 font-display">${escapeHtml(batch.name)}</h3>
+              <p class="text-xs swp-text-sec line-clamp-2 leading-relaxed">${escapeHtml(batch.description || "")}</p>
+              <div class="flex flex-wrap gap-1.5 pt-1">${subjectBadgesHtml}</div>
+            </div>
+            <div class="space-y-3 pt-2 border-t swp-border">
+              <div class="space-y-1">
+                <div class="flex items-center justify-between text-[11px] swp-text-sec">
+                  <span>Syllabus Progress</span>
+                  <span class="font-bold text-indigo-400">${progress.completed}/${progress.total} (${progress.percent}%)</span>
+                </div>
+                <div class="w-full h-1.5 rounded-full swp-elevated overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 transition-all duration-300" style="width: ${progress.percent}%"></div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <button type="button" class="study-now-btn flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-play text-xs"></i>
+                  <span>Open Classroom</span>
+                </button>
+                <button type="button" class="share-batch-btn w-10 h-10 rounded-xl swp-elevated border swp-border swp-text-sec hover:text-indigo-400 flex items-center justify-center transition shrink-0" title="Share Batch Link">
+                  <i class="fa-solid fa-share-nodes text-sm"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        card.querySelector(".study-now-btn").addEventListener("click", () => openClassroomBatch(batch.id));
+        card.querySelector(".share-batch-btn").addEventListener("click", (e) => {
+          e.stopPropagation();
+          const url = `${window.location.origin}${window.location.pathname}?batch=${encodeURIComponent(batch.id)}`;
+          navigator.clipboard?.writeText(url).then(() => showToast("Batch link copied!", "success"));
+        });
+        grid.appendChild(card);
+      });
+    }
+
+    // ----------------------------------------------------------
+    // 13. CLASSROOM HIERARCHY & SINGLETON PLAYBACK FLOW
+    // ----------------------------------------------------------
+    function openClassroomBatch(batchId, targetSubjectId = null, targetContentId = null, targetVideoId = null, resumeSeconds = null, autoPlayImmediate = false) {
+      const batch = state.batches[batchId];
+      if (!batch) return;
+
+      state.activeBatchId = batchId;
+      state.activeSidebarTab = "all";
+      state.playlistSearchQuery = "";
+      document.getElementById("playlist-search-input").value = "";
+      updateSidebarTabButtonsUI();
+
+      document.getElementById("classroom-batch-name").textContent = batch.name || "Classroom";
+      document.getElementById("classroom-batch-exam").textContent = batch.targetExam || "Exam";
+      document.getElementById("classroom-batch-desc").textContent = batch.description || "";
+
+      window.history.replaceState({ batchId }, "", `${window.location.pathname}?batch=${encodeURIComponent(batchId)}`);
+      switchView("classroom");
+
+      const subjects = getNormalizedSubjects(batch);
+      const subjectList = Object.values(subjects).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+      // Show non-intrusive Resume prompt bar if batch has saved state and user didn't already click Resume
+      const savedForBatch = state.batchResumeMap[batchId] || (state.studyResumeState?.batchId === batchId ? state.studyResumeState : null);
+      const resumeBar = document.getElementById("classroom-resume-prompt");
+      if (savedForBatch && savedForBatch.videoId && !autoPlayImmediate) {
+        document.getElementById("classroom-resume-text").textContent = `Resume "${savedForBatch.videoTitle}" at ${formatTime(savedForBatch.timestamp || 0)}?`;
+        resumeBar.classList.remove("hidden");
+        document.getElementById("classroom-resume-yes-btn").onclick = () => {
+          resumeBar.classList.add("hidden");
+          executeExactResume(savedForBatch);
+        };
+      } else {
+        resumeBar.classList.add("hidden");
+      }
+
+      if (subjectList.length === 0) {
+        state.activeSubjectId = null;
+        state.activeContentId = null;
+        state.activeLectureList = [];
+        renderClassroomSubjectsBar();
+        renderSubjectContentsSelector();
+        renderSidebarLectureItems();
+        return;
+      }
+
+      const chosenSubId = (targetSubjectId && subjects[targetSubjectId]) ? targetSubjectId : subjectList[0].id;
+      selectClassroomSubject(chosenSubId, targetContentId, targetVideoId, resumeSeconds, autoPlayImmediate);
+    }
+
+    function renderClassroomSubjectsBar() {
+      const bar = document.getElementById("classroom-subjects-bar");
+      const batch = state.batches[state.activeBatchId];
+      if (!bar || !batch) return;
+
+      const batchProg = calculateBatchProgress(batch);
+      document.getElementById("classroom-batch-progress-text").textContent = `${batchProg.percent}%`;
+
+      const subjects = getNormalizedSubjects(batch);
+      const subjectList = Object.values(subjects).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+      bar.innerHTML = "";
+      if (subjectList.length === 0) {
+        bar.innerHTML = `<div class="p-3 rounded-xl swp-card border swp-border text-xs swp-text-sec">No subjects added yet. Use the Admin Panel to add subjects.</div>`;
+        return;
+      }
+
+      subjectList.forEach((sub) => {
+        const isActive = sub.id === state.activeSubjectId;
+        const stats = calculateSubjectProgress(batch.id, sub);
+        const c = SUBJECT_COLOR_STYLES[sub.color] || SUBJECT_COLOR_STYLES.indigo;
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = isActive
+          ? `px-4 py-2 rounded-xl ${c.activeBg} text-white font-bold text-xs flex items-center gap-2 shadow-md shrink-0 transition`
+          : `px-4 py-2 rounded-xl swp-card hover:border-indigo-500/50 border swp-border swp-text font-semibold text-xs flex items-center gap-2 shrink-0 transition`;
+        btn.innerHTML = `
+          <i class="fa-solid ${escapeHtml(sub.icon)} ${isActive ? "text-white" : c.text}"></i>
+          <div class="text-left">
+            <div class="leading-none">${escapeHtml(sub.name)}</div>
+            <div class="text-[10px] ${isActive ? "text-white/80" : "swp-text-muted"} mt-0.5">${stats.percent}%</div>
+          </div>
+        `;
+        btn.addEventListener("click", () => selectClassroomSubject(sub.id));
+        bar.appendChild(btn);
+      });
+    }
+
+    function selectClassroomSubject(subjectId, targetContentId = null, targetVideoId = null, resumeSeconds = null, autoPlayImmediate = false) {
+      const batch = state.batches[state.activeBatchId];
+      if (!batch) return;
+      const subjects = getNormalizedSubjects(batch);
+      const subject = subjects[subjectId];
+      if (!subject) return;
+
+      state.activeSubjectId = subjectId;
+      renderClassroomSubjectsBar();
+
+      const contentsList = Object.values(subject.contents || {}).sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
+      document.getElementById("sidebar-active-subject-title").textContent = `${subject.name} — Modules`;
+
+      const subStats = calculateSubjectProgress(batch.id, subject);
+      document.getElementById("sidebar-subject-progress-badge").textContent = `${subStats.percent}% Done`;
+      document.getElementById("sidebar-subject-progress-bar").style.width = `${subStats.percent}%`;
+
+      if (contentsList.length === 0) {
+        state.activeContentId = null;
+        state.activeLectureList = [];
+        renderSubjectContentsSelector();
+        renderSidebarLectureItems();
+        return;
+      }
+
+      // If targetVideoId is given without targetContentId, find matching content module if possible
+      if (!targetContentId && targetVideoId) {
+        const matchContent = contentsList.find((c) => {
+          if (c.ytId === targetVideoId) return true;
+          if (c.type === "playlist" && Array.isArray(state.playlistVideosCache[c.ytId])) {
+            return state.playlistVideosCache[c.ytId].includes(targetVideoId);
+          }
+          return false;
+        });
+        if (matchContent) targetContentId = matchContent.id;
+      }
+
+      const chosenContentId = (targetContentId && subject.contents[targetContentId]) ? targetContentId : contentsList[0].id;
+      selectSubjectContentItem(chosenContentId, targetVideoId, resumeSeconds, autoPlayImmediate);
+    }
+
+    function renderSubjectContentsSelector() {
+      const container = document.getElementById("subject-contents-selector");
+      const batch = state.batches[state.activeBatchId];
+      if (!container || !batch) return;
+
+      const subjects = getNormalizedSubjects(batch);
+      const subject = subjects[state.activeSubjectId];
+      if (!subject) {
+        container.innerHTML = "";
+        return;
+      }
+
+      const subStats = calculateSubjectProgress(batch.id, subject);
+      document.getElementById("sidebar-subject-progress-badge").textContent = `${subStats.percent}% Done`;
+      document.getElementById("sidebar-subject-progress-bar").style.width = `${subStats.percent}%`;
+
+      const contentsList = Object.values(subject.contents || {}).sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
+      container.innerHTML = "";
+
+      if (contentsList.length === 0) {
+        container.innerHTML = `<p class="text-xs swp-text-muted italic p-2">No playlists or videos in this subject yet.</p>`;
+        return;
+      }
+
+      contentsList.forEach((content) => {
+        const isSelected = content.id === state.activeContentId;
+        const isPlaylist = content.type === "playlist";
+        const isLive = content.type === "live";
+
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = `w-full p-2.5 rounded-xl border text-left transition flex items-center justify-between gap-2 ${
+          isSelected
+            ? "bg-indigo-600/15 border-indigo-500 text-indigo-400 font-bold"
+            : "swp-input swp-border swp-text hover:border-indigo-500/40"
+        }`;
+        item.innerHTML = `
+          <div class="flex items-center gap-2 min-w-0">
+            <i class="fa-solid ${isPlaylist ? "fa-list-ul text-indigo-400" : isLive ? "fa-tower-broadcast text-red-400" : "fa-circle-play text-emerald-400"} text-xs shrink-0"></i>
+            <span class="text-xs truncate">${escapeHtml(content.title)}</span>
+          </div>
+          <span class="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase shrink-0 ${
+            isPlaylist ? "bg-indigo-500/15 text-indigo-400" : isLive ? "bg-red-600 text-white" : "bg-emerald-500/15 text-emerald-400"
+          }">${escapeHtml(content.type)}</span>
+        `;
+        item.addEventListener("click", () => selectSubjectContentItem(content.id, null, null, true));
+        container.appendChild(item);
+      });
+    }
+
+    function selectSubjectContentItem(contentId, targetVideoId = null, resumeSeconds = null, autoPlayImmediate = false) {
+      const batch = state.batches[state.activeBatchId];
+      if (!batch) return;
+      const subjects = getNormalizedSubjects(batch);
+      const subject = subjects[state.activeSubjectId];
+      if (!subject || !subject.contents || !subject.contents[contentId]) return;
+
+      if (playlistPollTimer) {
+        clearInterval(playlistPollTimer);
+        playlistPollTimer = null;
+      }
+
+      const content = subject.contents[contentId];
+      state.activeContentId = contentId;
+      state.activePlaylistId = content.type === "playlist" ? extractPlaylistId(content.ytId) : null;
+      renderSubjectContentsSelector();
+
+      document.getElementById("queue-header-title").textContent = content.title;
+
+      whenSingletonPlayerReady(() => {
+        if (content.type === "video" || content.type === "live") {
+          const vid = extractVideoId(content.ytId);
+          if (!vid) {
+            showToast("Invalid YouTube Video ID.", "error");
+            return;
+          }
+          const cached = state.oembedCache[vid];
+          state.activeLectureList = [
+            {
+              id: content.id,
+              ytVideoId: vid,
+              title: content.title || cached?.title || "Lecture",
+              thumbnail: `https://i.ytimg.com/vi/${vid}/mqdefault.jpg`,
+              isLive: content.type === "live",
+              subject: subject.name,
+              topic: content.title
+            }
+          ];
+          document.getElementById("playlist-sync-status").textContent = content.type === "live" ? "Live Stream" : "Single Video";
+          renderSidebarLectureItems();
+
+          const startSec = resumeSeconds !== null ? resumeSeconds : (state.videoTimestamps[vid] || 0);
+          playLectureAtIndex(0, startSec, autoPlayImmediate);
+          fetchNoembedMetadataForList([vid]);
+        } else {
+          syncPlaylistModule(subject, content, targetVideoId, resumeSeconds, autoPlayImmediate);
+        }
+      });
+    }
+
+    async function syncPlaylistModule(subject, content, targetVideoId = null, resumeSeconds = null, autoPlayImmediate = false) {
+      const playlistId = extractPlaylistId(content.ytId);
+      const statusBadge = document.getElementById("playlist-sync-status");
+      statusBadge.textContent = "Syncing...";
+
+      if (!playlistId) {
+        showToast("Invalid YouTube Playlist ID", "error");
+        return;
+      }
+
+      // If cached IDs exist AND we want immediate resume playback, build list right away
+      const cachedIds = state.playlistVideosCache[playlistId];
+      if (Array.isArray(cachedIds) && cachedIds.length > 0) {
+        buildPlaylistLectureList(playlistId, cachedIds, subject.name, content.title);
+        renderSidebarLectureItems();
+        if (targetVideoId && autoPlayImmediate) {
+          statusBadge.textContent = "Auto-Synced";
+          startPlaybackInSyncedPlaylist(targetVideoId, resumeSeconds, true);
+          fetchNoembedMetadataForList(cachedIds);
+          return;
+        }
+      }
+
+      // Method 1: Optional YouTube Data API v3
+      if (state.ytApiKey && state.ytApiKey.trim().length > 10) {
+        try {
+          const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${encodeURIComponent(playlistId)}&key=${encodeURIComponent(state.ytApiKey.trim())}`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.items && data.items.length > 0) {
+              const ids = [];
+              data.items.forEach((item, idx) => {
+                const vid = item.snippet?.resourceId?.videoId;
+                if (!vid) return;
+                ids.push(vid);
+                state.oembedCache[vid] = {
+                  title: item.snippet?.title || `Lecture #${idx + 1}`,
+                  thumbnail: item.snippet?.thumbnails?.medium?.url || `https://i.ytimg.com/vi/${vid}/mqdefault.jpg`
+                };
+              });
+              localStorage.setItem("swp_oembed_cache", JSON.stringify(state.oembedCache));
+              state.playlistVideosCache[playlistId] = ids;
+              localStorage.setItem("swp_playlist_videos_cache", JSON.stringify(state.playlistVideosCache));
+
+              buildPlaylistLectureList(playlistId, ids, subject.name, content.title);
+              statusBadge.textContent = "API Synced";
+              renderSidebarLectureItems();
+              startPlaybackInSyncedPlaylist(targetVideoId, resumeSeconds, autoPlayImmediate);
+              return;
+            }
+          }
+        } catch (e) {}
+      }
+
+      // Method 2: Native Singleton cuePlaylist + oEmbed
+      try {
+        window.activeYTPlayer.cuePlaylist({ listType: "playlist", list: playlistId, index: 0 });
+      } catch (e) {}
+
+      let attempts = 0;
+      playlistPollTimer = setInterval(() => {
+        attempts++;
+        if (!window.activeYTPlayer || typeof window.activeYTPlayer.getPlaylist !== "function") return;
+        const rawIds = window.activeYTPlayer.getPlaylist();
+        if (Array.isArray(rawIds) && rawIds.length > 0) {
+          clearInterval(playlistPollTimer);
+          playlistPollTimer = null;
+
+          state.playlistVideosCache[playlistId] = rawIds;
+          localStorage.setItem("swp_playlist_videos_cache", JSON.stringify(state.playlistVideosCache));
+
+          buildPlaylistLectureList(playlistId, rawIds, subject.name, content.title);
+          statusBadge.textContent = "Auto-Synced";
+          renderSidebarLectureItems();
+          renderClassroomSubjectsBar();
+          renderSubjectContentsSelector();
+          startPlaybackInSyncedPlaylist(targetVideoId, resumeSeconds, autoPlayImmediate);
+          fetchNoembedMetadataForList(rawIds);
+        } else if (attempts >= 12) {
+          clearInterval(playlistPollTimer);
+          playlistPollTimer = null;
+          statusBadge.textContent = "Ready";
+          if (state.activeLectureList.length > 0) {
+            startPlaybackInSyncedPlaylist(targetVideoId, resumeSeconds, autoPlayImmediate);
+          }
+        }
+      }, 350);
+    }
+
+    function buildPlaylistLectureList(playlistId, videoIds, subjectName, topicName) {
+      state.activeLectureList = videoIds.map((vid, idx) => {
+        const cached = state.oembedCache[vid];
+        return {
+          id: `pl_${playlistId}_${vid}`,
+          ytVideoId: vid,
+          title: cached?.title || `Lecture #${idx + 1}`,
+          thumbnail: cached?.thumbnail || `https://i.ytimg.com/vi/${vid}/mqdefault.jpg`,
+          isLive: false,
+          subject: subjectName,
+          topic: topicName
+        };
+      });
+    }
+
+    function startPlaybackInSyncedPlaylist(targetVideoId = null, resumeSeconds = null, autoPlay = false) {
+      if (state.activeLectureList.length === 0) return;
+      let idx = 0;
+      if (targetVideoId) {
+        const found = state.activeLectureList.findIndex((v) => v.ytVideoId === targetVideoId);
+        if (found !== -1) idx = found;
+      }
+      const vid = state.activeLectureList[idx].ytVideoId;
+      const startSec = resumeSeconds !== null ? resumeSeconds : (state.videoTimestamps[vid] || 0);
+      playLectureAtIndex(idx, startSec, autoPlay);
+    }
+
+    function playLectureAtIndex(index, startSeconds = null, autoPlay = true) {
+      const lecture = state.activeLectureList[index];
+      if (!lecture) return;
+
+      state.activeLectureIndex = index;
+      state.activeVideoId = lecture.ytVideoId;
+
+      const seekSec = startSeconds !== null
+        ? Math.floor(startSeconds)
+        : Math.floor(state.videoTimestamps[lecture.ytVideoId] || 0);
+
+      updateActiveLectureHeaderUI();
+      renderSidebarLectureItems();
+      renderStudyNotesList();
+
+      whenSingletonPlayerReady((player) => {
+        if (autoPlay) {
+          setBufferingSpinner(true, "Loading Lecture...");
+          player.loadVideoById({
+            videoId: lecture.ytVideoId,
+            startSeconds: seekSec
+          });
+          if (seekSec > 5) {
+            showToast(`Resumed "${lecture.title}" at ${formatTime(seekSec)}`, "info");
+          }
+        } else {
+          setBufferingSpinner(false);
+          player.cueVideoById({
+            videoId: lecture.ytVideoId,
+            startSeconds: seekSec
+          });
+          syncPlayPauseButtonIcon(window.YT ? window.YT.PlayerState.CUED : 5);
+        }
+      });
+    }
+
+    async function fetchNoembedMetadataForList(videoIds) {
+      let updated = false;
+      for (let i = 0; i < videoIds.length; i++) {
+        const vid = videoIds[i];
+        if (state.oembedCache[vid]?.title) continue;
+        try {
+          const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${encodeURIComponent(vid)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.title) {
+              state.oembedCache[vid] = {
+                title: data.title,
+                thumbnail: data.thumbnail_url || `https://i.ytimg.com/vi/${vid}/mqdefault.jpg`
+              };
+              updated = true;
+              const target = state.activeLectureList.find((x) => x.ytVideoId === vid);
+              if (target) {
+                target.title = data.title;
+                target.thumbnail = state.oembedCache[vid].thumbnail;
+              }
+              if (state.activeVideoId === vid) updateActiveLectureHeaderUI();
+              renderSidebarLectureItems();
+            }
+          }
+        } catch (e) {}
+      }
+      if (updated) localStorage.setItem("swp_oembed_cache", JSON.stringify(state.oembedCache));
+    }
+
+    // ----------------------------------------------------------
+    // 14. RESPONSIVE SPEED & QUALITY OVERLAY MENUS
+    // ----------------------------------------------------------
+    function openPlayerSettingsMenu(type) {
+      const modal = document.getElementById("player-menu-modal");
+      const title = document.getElementById("player-menu-title");
+      const container = document.getElementById("player-menu-options");
+      if (!modal || !container) return;
+
+      container.innerHTML = "";
+      if (type === "speed") {
+        title.textContent = "Select Playback Speed";
+        const speeds = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+        speeds.forEach((rate) => {
+          const active = state.preferredSpeed === rate;
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = `py-2.5 px-3 rounded-xl font-bold flex items-center justify-between transition ${
+            active ? "bg-indigo-600 text-white" : "bg-slate-800/90 hover:bg-slate-700 text-slate-200"
+          }`;
+          btn.innerHTML = `<span>${rate === 1 ? "1x (Normal)" : rate + "x"}</span>${active ? '<i class="fa-solid fa-check text-[10px]"></i>' : ""}`;
+          btn.addEventListener("click", () => {
+            applyPreferredPlaybackSpeed(rate, true);
+            modal.classList.add("hidden");
+          });
+          container.appendChild(btn);
+        });
+      } else {
+        title.textContent = "Select Video Quality";
+        const available = (window.activeYTPlayer && typeof window.activeYTPlayer.getAvailableQualityLevels === "function")
+          ? (window.activeYTPlayer.getAvailableQualityLevels() || [])
+          : [];
+        const qualities = [
+          { q: "default", label: "Auto (Recommended)" },
+          { q: "hd1080", label: "1080p Full HD" },
+          { q: "hd720", label: "720p HD" },
+          { q: "large", label: "480p Standard" },
+          { q: "medium", label: "360p Data Saver" },
+          { q: "small", label: "240p Low" }
+        ];
+        qualities.forEach((item) => {
+          const isCurrent = state.activeQuality === item.q;
+          const isSupported = item.q === "default" || available.length === 0 || available.includes(item.q);
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = `py-2.5 px-3 rounded-xl font-bold flex items-center justify-between transition ${
+            isCurrent ? "bg-purple-600 text-white" : "bg-slate-800/90 hover:bg-slate-700 text-slate-200"
+          } ${!isSupported ? "opacity-50" : ""}`;
+          btn.innerHTML = `<span>${item.label}</span>${isCurrent ? '<i class="fa-solid fa-check text-[10px]"></i>' : ""}`;
+          btn.addEventListener("click", () => {
+            state.activeQuality = item.q;
+            if (window.activeYTPlayer && window.isYTPlayerReady) {
+              if (typeof window.activeYTPlayer.setPlaybackQuality === "function") {
+                window.activeYTPlayer.setPlaybackQuality(item.q);
+              }
+              if (typeof window.activeYTPlayer.setPlaybackQualityRange === "function" && item.q !== "default") {
+                try { window.activeYTPlayer.setPlaybackQualityRange(item.q, item.q); } catch (e) {}
+              }
+            }
+            document.getElementById("quality-active-label").textContent = item.q === "default" ? "Auto" : item.label.split(" ")[0];
+            modal.classList.add("hidden");
+            showToast(`Quality set to ${item.label.split(" ")[0]}`, "info");
+          });
+          container.appendChild(btn);
+        });
+      }
+
+      modal.classList.remove("hidden");
+    }
+
+    function applyPreferredPlaybackSpeed(rate, notify = true) {
+      const valid = parseFloat(rate) || 1;
+      state.preferredSpeed = valid;
+      localStorage.setItem("swp_preferred_speed", String(valid));
+      document.getElementById("speed-active-label").textContent = `${valid}x`;
+
+      if (window.activeYTPlayer && window.isYTPlayerReady && typeof window.activeYTPlayer.setPlaybackRate === "function") {
+        try { window.activeYTPlayer.setPlaybackRate(valid); } catch (e) {}
+      }
+      if (notify) showToast(`Playback speed set to ${valid}x`, "info");
+    }
+
+    // ----------------------------------------------------------
+    // 15. SIDEBAR QUEUE & STUDY NOTES RENDERING
+    // ----------------------------------------------------------
+    function updateActiveLectureHeaderUI() {
+      const lecture = state.activeLectureList[state.activeLectureIndex];
+      if (!lecture) return;
+
+      document.getElementById("active-lecture-badge").textContent = lecture.isLive
+        ? "🔴 LIVE STREAM"
+        : `Lecture #${state.activeLectureIndex + 1}`;
+      document.getElementById("active-lecture-subject").textContent = lecture.subject || "Subject";
+      document.getElementById("active-lecture-topic").textContent = lecture.topic || "Module";
+      document.getElementById("active-lecture-title").textContent = lecture.title;
+
+      const done = isLectureCompleted(state.activeBatchId, lecture.ytVideoId);
+      const btn = document.getElementById("toggle-complete-btn");
+      const icon = document.getElementById("toggle-complete-icon");
+      const text = document.getElementById("toggle-complete-text");
+
+      if (done) {
+        btn.className = "px-4 py-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 text-xs sm:text-sm font-bold text-emerald-400 flex items-center justify-center gap-2 transition shrink-0";
+        icon.className = "fa-solid fa-circle-check text-emerald-400";
+        text.textContent = "Completed ✅";
+      } else {
+        btn.className = "px-4 py-2.5 rounded-xl border swp-border swp-elevated hover:border-emerald-500/50 text-xs sm:text-sm font-semibold swp-text flex items-center justify-center gap-2 transition shrink-0";
+        icon.className = "fa-regular fa-circle-check swp-text-muted";
+        text.textContent = "Mark Completed";
+      }
+    }
+
+    function toggleLectureCompleted(batchId, videoId, forceState = null) {
+      if (!batchId || !videoId) return;
+      const key = `${batchId}_${videoId}`;
+      const next = forceState !== null ? forceState : !state.completedLectures[key];
+      if (next) state.completedLectures[key] = true;
+      else delete state.completedLectures[key];
+      localStorage.setItem("swp_completed_lectures", JSON.stringify(state.completedLectures));
+
+      updateActiveLectureHeaderUI();
+      renderSidebarLectureItems();
+      renderClassroomSubjectsBar();
+      renderSubjectContentsSelector();
+    }
+
+    function renderSidebarLectureItems() {
+      const container = document.getElementById("playlist-items-container");
+      const counter = document.getElementById("sidebar-lecture-counter");
+      if (!container) return;
+
+      const filtered = state.activeLectureList
+        .map((item, originalIndex) => ({ ...item, originalIndex }))
+        .filter((item) => {
+          const done = isLectureCompleted(state.activeBatchId, item.ytVideoId);
+          if (state.activeSidebarTab === "pending" && done) return false;
+          if (state.activeSidebarTab === "completed" && !done) return false;
+          const q = state.playlistSearchQuery.trim().toLowerCase();
+          if (q && !(item.title && item.title.toLowerCase().includes(q))) return false;
+          return true;
+        });
+
+      counter.textContent = `${filtered.length} of ${state.activeLectureList.length} Lectures`;
+      container.innerHTML = "";
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center text-xs swp-text-sec">No lectures match this filter.</div>`;
+        return;
+      }
+
+      filtered.forEach((item) => {
+        const isCurrent = item.ytVideoId === state.activeVideoId;
+        const completed = isLectureCompleted(state.activeBatchId, item.ytVideoId);
+        const savedSec = state.videoTimestamps[item.ytVideoId] || 0;
+
+        const row = document.createElement("div");
+        row.className = `p-3 flex items-center gap-3 cursor-pointer transition ${
+          isCurrent ? "bg-indigo-600/15 border-l-4 border-l-indigo-500" : "hover:bg-indigo-500/5"
+        }`;
+        row.innerHTML = `
+          <button type="button" class="lecture-complete-check w-6 h-6 rounded-lg flex items-center justify-center shrink-0">
+            <i class="${completed ? "fa-solid fa-square-check text-emerald-400" : "fa-regular fa-square swp-text-muted"} text-base"></i>
+          </button>
+          <div class="relative w-20 aspect-video rounded-lg overflow-hidden bg-slate-900 shrink-0 border swp-border">
+            <img src="${escapeHtml(item.thumbnail)}" alt="${escapeHtml(item.title)}" class="w-full h-full object-cover" />
+            <span class="absolute bottom-1 right-1 px-1 rounded bg-black/80 text-white text-[9px] font-mono">#${item.originalIndex + 1}</span>
+          </div>
+          <div class="flex-1 min-w-0 space-y-1">
+            <h4 class="text-xs font-semibold ${isCurrent ? "text-indigo-400" : "swp-text"} line-clamp-2 leading-snug">${escapeHtml(item.title)}</h4>
+            <div class="flex items-center gap-2 text-[10px] swp-text-muted">
+              ${isCurrent ? `<span class="text-indigo-400 font-bold">▶ Active</span>` : ""}
+              ${savedSec > 5 ? `<span>• Saved at ${formatTime(savedSec)}</span>` : ""}
+            </div>
+          </div>
+        `;
+
+        row.addEventListener("click", (e) => {
+          if (e.target.closest(".lecture-complete-check")) return;
+          playLectureAtIndex(item.originalIndex, null, true);
+        });
+        row.querySelector(".lecture-complete-check").addEventListener("click", (e) => {
+          e.stopPropagation();
+          toggleLectureCompleted(state.activeBatchId, item.ytVideoId);
+        });
+        container.appendChild(row);
+      });
+    }
+
+    function updateSidebarTabButtonsUI() {
+      document.querySelectorAll(".sidebar-tab-btn").forEach((btn) => {
+        const tab = btn.getAttribute("data-tab");
+        btn.className = tab === state.activeSidebarTab
+          ? "sidebar-tab-btn py-1.5 px-2 rounded-lg bg-indigo-600 text-white transition truncate"
+          : "sidebar-tab-btn py-1.5 px-2 rounded-lg swp-text-sec hover:text-indigo-400 transition truncate";
+      });
+    }
+
+    async function saveTimestampedStudyNote(noteText) {
+      if (!state.activeBatchId || !state.activeVideoId) {
+        showToast("Select a lecture first to save notes!", "warning");
+        return;
+      }
+      const text = (noteText || "").trim();
+      if (!text) return;
+
+      const sec = window.activeYTPlayer && window.isYTPlayerReady && typeof window.activeYTPlayer.getCurrentTime === "function"
+        ? Math.floor(window.activeYTPlayer.getCurrentTime() || 0)
+        : 0;
+
+      const noteObj = {
+        id: `note_${Date.now()}`,
+        text,
+        timestamp: sec,
+        formattedTime: formatTime(sec),
+        videoTitle: state.activeLectureList[state.activeLectureIndex]?.title || "Lecture",
+        createdAt: Date.now()
+      };
+
+      if (!state.studyNotesAll[state.activeBatchId]) state.studyNotesAll[state.activeBatchId] = {};
+      if (!state.studyNotesAll[state.activeBatchId][state.activeVideoId]) state.studyNotesAll[state.activeBatchId][state.activeVideoId] = {};
+      state.studyNotesAll[state.activeBatchId][state.activeVideoId][noteObj.id] = noteObj;
+      localStorage.setItem("swp_study_notes", JSON.stringify(state.studyNotesAll));
+      renderStudyNotesList();
+
+      try {
+        await set(ref(db, `studyNotes/${state.activeBatchId}/${state.activeVideoId}/${noteObj.id}`), noteObj);
+        showToast(`Saved note at [${noteObj.formattedTime}]`, "success");
+      } catch (e) {}
+    }
+
+    function renderStudyNotesList() {
+      const container = document.getElementById("study-notes-list");
+      const pill = document.getElementById("notes-count-pill");
+      if (!container) return;
+
+      const notesObj = state.studyNotesAll[state.activeBatchId]?.[state.activeVideoId] || {};
+      const list = Object.values(notesObj).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+      pill.textContent = String(list.length);
+      container.innerHTML = "";
+
+      if (list.length === 0) {
+        container.innerHTML = `<div class="p-5 rounded-xl swp-input border swp-border text-center text-xs swp-text-muted">No timestamped notes for this lecture yet.</div>`;
+        return;
+      }
+
+      list.forEach((n) => {
+        const div = document.createElement("div");
+        div.className = "p-3 rounded-xl swp-input border swp-border flex items-start justify-between gap-3";
+        div.innerHTML = `
+          <div class="flex items-start gap-2.5 min-w-0 flex-1">
+            <button type="button" class="seek-note-btn px-2 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-600 text-indigo-400 hover:text-white font-mono text-xs font-bold shrink-0 transition">
+              [${escapeHtml(n.formattedTime || formatTime(n.timestamp))}]
+            </button>
+            <p class="text-xs sm:text-sm swp-text leading-relaxed break-words pt-0.5">${escapeHtml(n.text)}</p>
+          </div>
+          <button type="button" class="delete-note-btn p-1.5 swp-text-muted hover:text-red-400 text-xs shrink-0">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        `;
+        div.querySelector(".seek-note-btn").addEventListener("click", () => {
+          if (window.activeYTPlayer && window.isYTPlayerReady) {
+            window.activeYTPlayer.seekTo(n.timestamp || 0, true);
+            window.activeYTPlayer.playVideo();
+          }
+        });
+        div.querySelector(".delete-note-btn").addEventListener("click", async () => {
+          delete state.studyNotesAll[state.activeBatchId][state.activeVideoId][n.id];
+          localStorage.setItem("swp_study_notes", JSON.stringify(state.studyNotesAll));
+          renderStudyNotesList();
+          remove(ref(db, `studyNotes/${state.activeBatchId}/${state.activeVideoId}/${n.id}`)).catch(() => {});
+        });
+        container.appendChild(div);
+      });
+    }
+
+    // ----------------------------------------------------------
+    // 16. PLAYER CONTROLS & FULLSCREEN HELPERS
+    // ----------------------------------------------------------
+    function togglePlayPauseWithRipple(showRipple = true) {
+      if (!window.activeYTPlayer || !window.isYTPlayerReady) return;
+      const st = window.activeYTPlayer.getPlayerState ? window.activeYTPlayer.getPlayerState() : -1;
+      if (st === window.YT.PlayerState.PLAYING) {
+        window.activeYTPlayer.pauseVideo();
+        if (showRipple) triggerCenterRipple("fa-pause");
+      } else {
+        window.activeYTPlayer.playVideo();
+        if (showRipple) triggerCenterRipple("fa-play");
+      }
+    }
+
+    function triggerCenterRipple(iconClass) {
+      const ripple = document.getElementById("player-center-ripple");
+      const icon = document.getElementById("player-center-ripple-icon");
+      if (!ripple || !icon) return;
+      icon.className = `fa-solid ${iconClass} text-2xl`;
+      ripple.classList.remove("hidden", "ripple-animate");
+      void ripple.offsetWidth;
+      ripple.classList.add("ripple-animate");
+      setTimeout(() => ripple.classList.add("hidden"), 520);
+    }
+
+    function seekRelative(deltaSeconds, showCenterRipple = true) {
+      if (!window.activeYTPlayer || !window.isYTPlayerReady || typeof window.activeYTPlayer.getCurrentTime !== "function") return;
+      const now = window.activeYTPlayer.getCurrentTime() || 0;
+      const dur = window.activeYTPlayer.getDuration() || 0;
+      const target = dur > 0 ? Math.min(dur, Math.max(0, now + deltaSeconds)) : Math.max(0, now + deltaSeconds);
+      lastScrubTime = Date.now();
+      window.activeYTPlayer.seekTo(target, true);
+      if (showCenterRipple) triggerCenterRipple(deltaSeconds > 0 ? "fa-forward" : "fa-backward");
+      showControlsBar();
+    }
+
+    function playPreviousLecture() {
+      if (state.activeLectureIndex > 0) playLectureAtIndex(state.activeLectureIndex - 1, null, true);
+      else showToast("Already at the first lecture.", "info");
+    }
+
+    function playNextLecture() {
+      if (state.activeLectureIndex < state.activeLectureList.length - 1) playLectureAtIndex(state.activeLectureIndex + 1, null, true);
+      else showToast("Reached the end of this module!", "success");
+    }
+
+    function toggleMutePlayer() {
+      if (!window.activeYTPlayer || !window.isYTPlayerReady) return;
+      const volIcon = document.getElementById("ctrl-volume-icon");
+      const volSlider = document.getElementById("volume-slider");
+      if (window.activeYTPlayer.isMuted()) {
+        window.activeYTPlayer.unMute();
+        const v = window.activeYTPlayer.getVolume() || 100;
+        volSlider.value = String(v);
+        volIcon.className = "fa-solid fa-volume-high text-xs sm:text-sm";
+      } else {
+        window.activeYTPlayer.mute();
+        volSlider.value = "0";
+        volIcon.className = "fa-solid fa-volume-xmark text-xs sm:text-sm text-red-400";
+      }
+    }
+
+    function toggleTheaterMode() {
+      state.isTheaterMode = !state.isTheaterMode;
+      const leftCol = document.getElementById("classroom-left-col");
+      const rightCol = document.getElementById("classroom-right-col");
+      const splitBox = document.getElementById("classroom-split-container");
+      const label = document.getElementById("theater-mode-label");
+
+      if (state.isTheaterMode) {
+        splitBox.classList.remove("lg:flex-row");
+        splitBox.classList.add("flex-col");
+        leftCol.className = "w-full space-y-4";
+        rightCol.className = "w-full px-3 sm:px-0 space-y-4";
+        if (label) label.textContent = "Standard View";
+      } else {
+        splitBox.classList.add("lg:flex-row");
+        leftCol.className = "w-full lg:w-[68%] space-y-4";
+        rightCol.className = "w-full lg:w-[32%] px-3 sm:px-0 space-y-4";
+        if (label) label.textContent = "Theater Mode";
+      }
+    }
+
+    async function toggleCustomFullscreen() {
+      const wrapper = document.getElementById("player-wrapper");
+      if (!wrapper) return;
+      try {
+        const isFs = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+        if (!isFs) {
+          if (wrapper.requestFullscreen) await wrapper.requestFullscreen();
+          else if (wrapper.webkitRequestFullscreen) wrapper.webkitRequestFullscreen();
+          else if (wrapper.msRequestFullscreen) wrapper.msRequestFullscreen();
+          if (screen.orientation && typeof screen.orientation.lock === "function") {
+            screen.orientation.lock("landscape").catch(() => {});
+          }
+        } else {
+          if (document.exitFullscreen) await document.exitFullscreen();
+          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+          else if (document.msExitFullscreen) document.msExitFullscreen();
+          if (screen.orientation && typeof screen.orientation.unlock === "function") {
+            screen.orientation.unlock();
+          }
+        }
+      } catch (e) {}
+    }
+
+    function showControlsBar() {
+      const controls = document.getElementById("custom-controls");
+      if (!controls) return;
+      controls.classList.remove("controls-hidden");
+      scheduleControlsAutoHide();
+    }
+
+    function scheduleControlsAutoHide() {
+      if (controlsHideTimer) clearTimeout(controlsHideTimer);
+      controlsHideTimer = setTimeout(() => {
+        if (!window.activeYTPlayer || !window.isYTPlayerReady) return;
+        const st = window.activeYTPlayer.getPlayerState ? window.activeYTPlayer.getPlayerState() : -1;
+        const menuOpen = !document.getElementById("player-menu-modal").classList.contains("hidden");
+        if (st === window.YT.PlayerState.PLAYING && !menuOpen && !isScrubbing) {
+          document.getElementById("custom-controls").classList.add("controls-hidden");
+        }
+      }, 3000);
+    }
+
+    // ----------------------------------------------------------
+    // 17. ADMIN PANEL HIERARCHICAL CRUD
+    // ----------------------------------------------------------
+    function openAdminPanelWithPinCheck() {
+      if (state.isAdminUnlocked) {
+        switchView("admin");
+      } else {
+        const modal = document.getElementById("pin-modal");
+        const input = document.getElementById("pin-modal-input");
+        modal.classList.remove("hidden");
+        input.value = "";
+        setTimeout(() => input.focus(), 50);
+      }
+    }
+
+    function populateAdminBatchDropdowns() {
+      const subSelect = document.getElementById("admin-subject-batch-select");
+      const contentBatchSelect = document.getElementById("admin-content-batch-select");
+      if (!subSelect || !contentBatchSelect) return;
+
+      const prevSub = subSelect.value;
+      const prevContent = contentBatchSelect.value;
+      const list = Object.values(state.batches).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      const html = `<option value="">-- Choose Batch --</option>` + list.map((b) => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.name)}</option>`).join("");
+
+      subSelect.innerHTML = html;
+      contentBatchSelect.innerHTML = html;
+
+      const fallbackId = list[0]?.id || "";
+      subSelect.value = (prevSub && state.batches[prevSub]) ? prevSub : fallbackId;
+      contentBatchSelect.value = (prevContent && state.batches[prevContent]) ? prevContent : fallbackId;
+
+      renderAdminSubjectsList(subSelect.value);
+      populateAdminContentSubjectsDropdown(contentBatchSelect.value);
+    }
+
+    function renderAdminSubjectsList(batchId) {
+      const container = document.getElementById("admin-subjects-list");
+      const countBadge = document.getElementById("admin-subjects-count");
+      if (!container) return;
+
+      const batch = state.batches[batchId];
+      if (!batch) {
+        countBadge.textContent = "0";
+        container.innerHTML = `<p class="text-xs swp-text-muted italic">Select a batch above.</p>`;
+        return;
+      }
+
+      const subjects = Object.values(batch.subjects || {}).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+      countBadge.textContent = String(subjects.length);
+      container.innerHTML = "";
+
+      subjects.forEach((sub) => {
+        const count = sub.contents ? Object.keys(sub.contents).length : 0;
+        const row = document.createElement("div");
+        row.className = "p-2.5 rounded-xl swp-input border swp-border flex items-center justify-between gap-2 text-xs";
+        row.innerHTML = `
+          <div class="flex items-center gap-2 min-w-0">
+            <i class="fa-solid ${escapeHtml(sub.icon)} text-indigo-400"></i>
+            <span class="font-bold swp-text truncate">${escapeHtml(sub.name)} (${count})</span>
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <button type="button" class="sub-edit-btn p-1.5 rounded swp-elevated hover:text-indigo-400"><i class="fa-solid fa-pen"></i></button>
+            <button type="button" class="sub-del-btn p-1.5 rounded swp-elevated hover:text-red-400"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+        `;
+        row.querySelector(".sub-edit-btn").addEventListener("click", () => {
+          document.getElementById("subject-edit-id").value = sub.id;
+          document.getElementById("subject-name-input").value = sub.name;
+          document.getElementById("subject-icon-input").value = sub.icon || "fa-book";
+          document.getElementById("subject-color-input").value = sub.color || "indigo";
+          document.getElementById("subject-save-btn-text").textContent = "Update Subject";
+          document.getElementById("subject-edit-badge").classList.remove("hidden");
+          document.getElementById("subject-cancel-edit-btn").classList.remove("hidden");
+        });
+        row.querySelector(".sub-del-btn").addEventListener("click", () => {
+          remove(ref(db, `batches/${batchId}/subjects/${sub.id}`)).then(() => showToast("Subject deleted", "success"));
+        });
+        container.appendChild(row);
+      });
+    }
+
+    function populateAdminContentSubjectsDropdown(batchId, forceSubId = null) {
+      const select = document.getElementById("admin-content-subject-select");
+      if (!select) return;
+      const prev = forceSubId || select.value;
+      const batch = state.batches[batchId];
+      const subjects = batch && batch.subjects ? Object.values(batch.subjects).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)) : [];
+
+      select.innerHTML = `<option value="">-- Subject --</option>` + subjects.map((s) => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join("");
+      select.value = (prev && batch?.subjects?.[prev]) ? prev : (subjects[0]?.id || "");
+      renderAdminContentsList(batchId, select.value);
+    }
+
+    function renderAdminContentsList(batchId, subjectId) {
+      const container = document.getElementById("admin-contents-list");
+      const badge = document.getElementById("admin-contents-count");
+      if (!container) return;
+
+      const subject = state.batches[batchId]?.subjects?.[subjectId];
+      if (!subject) {
+        badge.textContent = "0";
+        container.innerHTML = "";
+        return;
+      }
+
+      const list = Object.values(subject.contents || {}).sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
+      badge.textContent = String(list.length);
+      container.innerHTML = "";
+
+      list.forEach((c) => {
+        const row = document.createElement("div");
+        row.className = "p-2.5 rounded-xl swp-input border swp-border flex items-center justify-between gap-2 text-xs";
+        row.innerHTML = `
+          <div class="min-w-0 flex-1">
+            <div class="font-semibold swp-text truncate">[${escapeHtml(c.type.toUpperCase())}] ${escapeHtml(c.title)}</div>
+            <div class="text-[10px] swp-text-muted font-mono truncate">${escapeHtml(c.ytId)}</div>
+          </div>
+          <button type="button" class="del-content-btn p-1.5 rounded swp-elevated hover:text-red-400 shrink-0"><i class="fa-solid fa-trash-can"></i></button>
+        `;
+        row.querySelector(".del-content-btn").addEventListener("click", () => {
+          remove(ref(db, `batches/${batchId}/subjects/${subjectId}/contents/${c.id}`)).then(() => showToast("Removed from subject", "success"));
+        });
+        container.appendChild(row);
+      });
+    }
+
+    function renderAdminBatchesTable() {
+      const tbody = document.getElementById("admin-batches-tbody");
+      const badge = document.getElementById("admin-total-batches");
+      if (!tbody) return;
+
+      const list = Object.values(state.batches).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      badge.textContent = `${list.length} Batches`;
+      tbody.innerHTML = "";
+
+      list.forEach((batch) => {
+        const subjects = Object.values(getNormalizedSubjects(batch));
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-indigo-500/5 transition";
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-bold swp-text">${escapeHtml(batch.name)}</td>
+          <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-400 text-xs">${escapeHtml(batch.targetExam)}</span></td>
+          <td class="py-3 px-4 text-xs swp-text-sec">${subjects.length} Subjects</td>
+          <td class="py-3 px-4 text-right">
+            <div class="inline-flex items-center gap-1.5">
+              <button type="button" class="admin-open-btn px-2.5 py-1 rounded bg-indigo-500/15 text-indigo-400 text-xs font-semibold">Open</button>
+              <button type="button" class="admin-edit-btn p-1.5 rounded swp-elevated hover:text-indigo-400"><i class="fa-solid fa-pen"></i></button>
+              <button type="button" class="admin-del-btn p-1.5 rounded swp-elevated hover:text-red-400"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+          </td>
+        `;
+        tr.querySelector(".admin-open-btn").addEventListener("click", () => openClassroomBatch(batch.id));
+        tr.querySelector(".admin-edit-btn").addEventListener("click", () => {
+          document.getElementById("batch-id-input").value = batch.id;
+          document.getElementById("batch-name-input").value = batch.name || "";
+          document.getElementById("batch-exam-input").value = batch.targetExam || "";
+          document.getElementById("batch-lang-input").value = batch.language || "Hinglish";
+          document.getElementById("batch-thumb-input").value = batch.thumbnail || "";
+          document.getElementById("batch-desc-input").value = batch.description || "";
+          document.getElementById("batch-thumb-preview").src = batch.thumbnail || DEFAULT_THUMBNAIL;
+          document.getElementById("save-batch-btn-text").textContent = "Update Batch";
+          document.getElementById("batch-edit-mode-badge").classList.remove("hidden");
+          document.getElementById("cancel-edit-btn").classList.remove("hidden");
+        });
+        tr.querySelector(".admin-del-btn").addEventListener("click", () => {
+          state.pendingDeleteBatchId = batch.id;
+          document.getElementById("delete-modal").classList.remove("hidden");
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ----------------------------------------------------------
+    // 18. BIND ALL DOM EVENTS
+    // ----------------------------------------------------------
+    function bindAllEvents() {
+      // PWA Install Button & Modal
+      document.getElementById("pwa-install-btn").addEventListener("click", async () => {
+        if (deferredInstallPrompt) {
+          deferredInstallPrompt.prompt();
+          const { outcome } = await deferredInstallPrompt.userChoice;
+          if (outcome === "accepted") {
+            deferredInstallPrompt = null;
+            document.getElementById("pwa-install-btn").classList.add("hidden");
+          }
+        } else {
+          document.getElementById("pwa-install-modal").classList.remove("hidden");
+        }
+      });
+      document.getElementById("close-pwa-modal-btn").addEventListener("click", () => {
+        document.getElementById("pwa-install-modal").classList.add("hidden");
+      });
+      document.getElementById("got-it-pwa-modal-btn").addEventListener("click", () => {
+        document.getElementById("pwa-install-modal").classList.add("hidden");
+      });
+
+      // Theme Toggle
+      document.getElementById("theme-toggle-btn").addEventListener("click", () => {
+        applyTheme(state.theme === "dark" ? "light" : "dark");
+      });
+
+      // Pomodoro Timer
+      const pomoPopover = document.getElementById("pomodoro-popover");
+      document.getElementById("pomodoro-config-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        pomoPopover.classList.toggle("hidden");
+      });
+      pomoPopover.addEventListener("click", (e) => e.stopPropagation());
+      document.getElementById("pomodoro-toggle-btn").addEventListener("click", togglePomodoroTimer);
+      document.getElementById("pomodoro-reset-btn").addEventListener("click", () => {
+        if (pomoInterval) clearInterval(pomoInterval);
+        state.pomoRunning = false;
+        state.pomoSecondsLeft = state.pomoTotalSeconds;
+        updatePomodoroUI();
+      });
+      document.querySelectorAll(".pomo-preset-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          setPomodoroPreset(btn.getAttribute("data-pomo-preset"), btn.getAttribute("data-pomo-type"));
+          pomoPopover.classList.add("hidden");
+        });
+      });
+      document.getElementById("pomo-apply-custom-btn").addEventListener("click", () => {
+        const mins = parseInt(document.getElementById("pomo-custom-mins").value, 10);
+        if (mins > 0) {
+          setPomodoroPreset(mins, "Custom");
+          pomoPopover.classList.add("hidden");
+        }
+      });
+
+      // Navbar Navigation
+      document.getElementById("brand-logo-btn").addEventListener("click", () => {
+        window.history.replaceState({}, "", window.location.pathname);
+        switchView("home");
+      });
+      document.getElementById("nav-home-btn").addEventListener("click", () => {
+        window.history.replaceState({}, "", window.location.pathname);
+        switchView("home");
+      });
+      document.getElementById("nav-admin-btn").addEventListener("click", openAdminPanelWithPinCheck);
+
+      // Search Bars
+      const sInput = document.getElementById("global-search-input");
+      const mInput = document.getElementById("mobile-search-input");
+      const clearBtn = document.getElementById("clear-search-btn");
+      const updateSearch = (val) => {
+        state.searchQuery = val;
+        sInput.value = val;
+        mInput.value = val;
+        clearBtn.classList.toggle("hidden", !val);
+        if (state.currentView !== "home") switchView("home");
+        renderBatchesGrid();
+      };
+      sInput.addEventListener("input", (e) => updateSearch(e.target.value));
+      mInput.addEventListener("input", (e) => updateSearch(e.target.value));
+      clearBtn.addEventListener("click", () => updateSearch(""));
+
+      document.getElementById("empty-reset-filter-btn").addEventListener("click", () => {
+        state.selectedCategory = "All";
+        updateSearch("");
+        renderCategoryPills();
+      });
+      document.getElementById("empty-open-admin-btn").addEventListener("click", openAdminPanelWithPinCheck);
+
+      // Dismiss Resume Banners cleanly without interrupting video
+      document.getElementById("home-resume-dismiss").addEventListener("click", (e) => {
+        e.stopPropagation();
+        document.getElementById("home-resume-banner").classList.add("hidden");
+      });
+      document.getElementById("classroom-resume-close-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        document.getElementById("classroom-resume-prompt").classList.add("hidden");
+      });
+
+      // Classroom Header & Controls
+      document.getElementById("back-to-batches-btn").addEventListener("click", () => {
+        window.history.replaceState({}, "", window.location.pathname);
+        switchView("home");
+      });
+      document.getElementById("theater-mode-btn").addEventListener("click", toggleTheaterMode);
+      document.getElementById("ctrl-pip-btn").addEventListener("click", toggleTheaterMode);
+      document.getElementById("classroom-share-btn").addEventListener("click", () => {
+        const url = `${window.location.origin}${window.location.pathname}?batch=${encodeURIComponent(state.activeBatchId || "")}`;
+        navigator.clipboard?.writeText(url).then(() => showToast("Batch link copied!", "success"));
+      });
+      document.getElementById("classroom-refresh-playlist-btn").addEventListener("click", () => {
+        if (state.activeContentId) selectSubjectContentItem(state.activeContentId, state.activeVideoId, null, false);
+      });
+      document.getElementById("toggle-complete-btn").addEventListener("click", () => {
+        if (state.activeBatchId && state.activeVideoId) toggleLectureCompleted(state.activeBatchId, state.activeVideoId);
+      });
+
+      // Player Control Bar Buttons
+      const wrapper = document.getElementById("player-wrapper");
+      wrapper.addEventListener("mousemove", showControlsBar);
+      wrapper.addEventListener("touchstart", showControlsBar, { passive: true });
+
+      document.getElementById("ctrl-play-btn").addEventListener("click", () => togglePlayPauseWithRipple(true));
+      document.getElementById("ctrl-prev-btn").addEventListener("click", playPreviousLecture);
+      document.getElementById("ctrl-next-btn").addEventListener("click", playNextLecture);
+      document.getElementById("ctrl-rewind-btn").addEventListener("click", () => seekRelative(-10, true));
+      document.getElementById("ctrl-forward-btn").addEventListener("click", () => seekRelative(10, true));
+      document.getElementById("ctrl-mute-btn").addEventListener("click", toggleMutePlayer);
+      document.getElementById("ctrl-fullscreen-btn").addEventListener("click", toggleCustomFullscreen);
+
+      document.getElementById("ctrl-speed-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        openPlayerSettingsMenu("speed");
+      });
+      document.getElementById("ctrl-quality-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        openPlayerSettingsMenu("quality");
+      });
+      document.getElementById("close-player-menu-btn").addEventListener("click", () => {
+        document.getElementById("player-menu-modal").classList.add("hidden");
+      });
+      document.getElementById("player-menu-modal").addEventListener("click", (e) => {
+        if (e.target.id === "player-menu-modal") {
+          document.getElementById("player-menu-modal").classList.add("hidden");
+        }
+      });
+
+      document.getElementById("sync-live-btn").addEventListener("click", () => {
+        if (window.activeYTPlayer && window.isYTPlayerReady && typeof window.activeYTPlayer.getDuration === "function") {
+          const edge = window.activeYTPlayer.getDuration();
+          if (edge > 0) window.activeYTPlayer.seekTo(edge, true);
+          window.activeYTPlayer.playVideo();
+          showToast("Synced to live edge 🔴", "info");
+        }
+      });
+
+      // Seekbar Scrubbing & Hover Preview
+      const seekSlider = document.getElementById("seek-slider");
+      const playedBar = document.getElementById("seek-played-bar");
+      const hoverTooltip = document.getElementById("seek-hover-tooltip");
+      const timelineWrapper = document.getElementById("timeline-wrapper");
+
+      timelineWrapper.addEventListener("mousemove", (e) => {
+        if (!window.activeYTPlayer || !window.isYTPlayerReady) return;
+        const dur = window.activeYTPlayer.getDuration ? (window.activeYTPlayer.getDuration() || 0) : 0;
+        if (dur <= 0) return;
+        const rect = timelineWrapper.getBoundingClientRect();
+        const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+        hoverTooltip.textContent = formatTime(pct * dur);
+        hoverTooltip.style.left = `${pct * 100}%`;
+        hoverTooltip.classList.remove("hidden");
+      });
+      timelineWrapper.addEventListener("mouseleave", () => hoverTooltip.classList.add("hidden"));
+
+      seekSlider.addEventListener("pointerdown", () => { isScrubbing = true; });
+      seekSlider.addEventListener("touchstart", () => { isScrubbing = true; }, { passive: true });
+      seekSlider.addEventListener("input", (e) => {
+        isScrubbing = true;
+        const val = parseFloat(e.target.value) || 0;
+        if (playedBar) playedBar.style.width = `${val}%`;
+        if (window.activeYTPlayer && window.isYTPlayerReady && typeof window.activeYTPlayer.getDuration === "function") {
+          const dur = window.activeYTPlayer.getDuration() || 0;
+          if (dur > 0) document.getElementById("current-time-text").textContent = formatTime((val / 100) * dur);
+        }
+      });
+      seekSlider.addEventListener("change", (e) => {
+        const val = parseFloat(e.target.value) || 0;
+        if (window.activeYTPlayer && window.isYTPlayerReady && typeof window.activeYTPlayer.getDuration === "function") {
+          const dur = window.activeYTPlayer.getDuration() || 0;
+          if (dur > 0) {
+            lastScrubTime = Date.now();
+            window.activeYTPlayer.seekTo((val / 100) * dur, true);
+          }
+        }
+        isScrubbing = false;
+      });
+      seekSlider.addEventListener("pointerup", () => { isScrubbing = false; });
+      seekSlider.addEventListener("touchend", () => { isScrubbing = false; });
+
+      // Volume Slider
+      document.getElementById("volume-slider").addEventListener("input", (e) => {
+        const vol = parseInt(e.target.value, 10);
+        if (window.activeYTPlayer && window.isYTPlayerReady) {
+          window.activeYTPlayer.unMute();
+          window.activeYTPlayer.setVolume(vol);
+          document.getElementById("ctrl-volume-icon").className =
+            vol === 0 ? "fa-solid fa-volume-xmark text-xs sm:text-sm text-red-400" : "fa-solid fa-volume-high text-xs sm:text-sm";
+        }
+      });
+
+      // Workspace Tabs & Notes
+      document.querySelectorAll(".workspace-tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const tab = btn.getAttribute("data-workspace-tab");
+          document.getElementById("workspace-panel-notes").classList.toggle("hidden", tab !== "notes");
+          document.getElementById("workspace-panel-overview").classList.toggle("hidden", tab !== "overview");
+        });
+      });
+
+      document.getElementById("study-note-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const input = document.getElementById("study-note-input");
+        saveTimestampedStudyNote(input.value);
+        input.value = "";
+      });
+      document.getElementById("ctrl-quick-note-btn").addEventListener("click", () => {
+        const input = document.getElementById("study-note-input");
+        input.focus();
+        input.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      document.getElementById("export-notes-btn").addEventListener("click", () => {
+        const notesObj = state.studyNotesAll[state.activeBatchId]?.[state.activeVideoId] || {};
+        const list = Object.values(notesObj).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        if (list.length === 0) return showToast("No notes to export.", "warning");
+        const content = list.map((n) => `[${n.formattedTime}] ${n.text}`).join("\n");
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "Study_Notes.txt";
+        a.click();
+      });
+
+      // Sidebar Filter Tabs & Search
+      document.querySelectorAll(".sidebar-tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.activeSidebarTab = btn.getAttribute("data-tab") || "all";
+          updateSidebarTabButtonsUI();
+          renderSidebarLectureItems();
+        });
+      });
+      document.getElementById("playlist-search-input").addEventListener("input", (e) => {
+        state.playlistSearchQuery = e.target.value;
+        renderSidebarLectureItems();
+      });
+
+      // Keyboard Shortcuts
+      document.addEventListener("keydown", (e) => {
+        if (state.currentView !== "classroom") return;
+        if (e.altKey && e.key.toLowerCase() === "n") {
+          e.preventDefault();
+          const input = document.getElementById("study-note-input");
+          input.focus();
+          input.scrollIntoView({ behavior: "smooth", block: "center" });
+          return;
+        }
+        const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : "";
+        if (tag === "input" || tag === "textarea" || tag === "select") return;
+
+        const key = e.key.toLowerCase();
+        if (key === " " || key === "k") { e.preventDefault(); togglePlayPauseWithRipple(true); }
+        else if (key === "arrowright" || key === "l") { e.preventDefault(); seekRelative(10, true); }
+        else if (key === "arrowleft" || key === "j") { e.preventDefault(); seekRelative(-10, true); }
+        else if (key === "m") { e.preventDefault(); toggleMutePlayer(); }
+        else if (key === "f") { e.preventDefault(); toggleCustomFullscreen(); }
+        else if (key === "t") { e.preventDefault(); toggleTheaterMode(); }
+      });
+
+      // Admin PIN & CRUD Forms
+      document.getElementById("close-pin-modal-btn").addEventListener("click", () => {
+        document.getElementById("pin-modal").classList.add("hidden");
+      });
+      document.getElementById("pin-verify-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (document.getElementById("pin-modal-input").value.trim() === String(state.adminPin)) {
+          state.isAdminUnlocked = true;
+          sessionStorage.setItem("swp_admin_unlocked", "true");
+          document.getElementById("pin-modal").classList.add("hidden");
+          switchView("admin");
+        } else {
+          showToast("Incorrect Admin PIN!", "error");
+        }
+      });
+      document.getElementById("admin-logout-btn").addEventListener("click", () => {
+        state.isAdminUnlocked = false;
+        sessionStorage.removeItem("swp_admin_unlocked");
+        switchView("home");
+      });
+
+      document.getElementById("batch-thumb-input").addEventListener("input", (e) => {
+        document.getElementById("batch-thumb-preview").src = e.target.value.trim() || DEFAULT_THUMBNAIL;
+      });
+      document.getElementById("cancel-edit-btn").addEventListener("click", () => {
+        document.getElementById("batch-crud-form").reset();
+        document.getElementById("batch-id-input").value = "";
+        document.getElementById("save-batch-btn-text").textContent = "Save Batch";
+        document.getElementById("batch-edit-mode-badge").classList.add("hidden");
+        document.getElementById("cancel-edit-btn").classList.add("hidden");
+      });
+
+      document.getElementById("batch-crud-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const id = document.getElementById("batch-id-input").value.trim();
+        const payload = {
+          name: document.getElementById("batch-name-input").value.trim(),
+          targetExam: document.getElementById("batch-exam-input").value.trim(),
+          language: document.getElementById("batch-lang-input").value,
+          thumbnail: document.getElementById("batch-thumb-input").value.trim() || DEFAULT_THUMBNAIL,
+          description: document.getElementById("batch-desc-input").value.trim()
+        };
+        if (id && state.batches[id]) {
+          await update(ref(db, `batches/${id}`), payload);
+          showToast("Batch updated!", "success");
+        } else {
+          const newRef = push(ref(db, "batches"));
+          await set(newRef, { id: newRef.key, ...payload, createdAt: Date.now(), subjects: {} });
+          showToast("Batch created!", "success");
+        }
+        document.getElementById("cancel-edit-btn").click();
+      });
+
+      document.getElementById("admin-subject-batch-select").addEventListener("change", (e) => renderAdminSubjectsList(e.target.value));
+      document.getElementById("subject-cancel-edit-btn").addEventListener("click", () => {
+        document.getElementById("subject-edit-id").value = "";
+        document.getElementById("subject-name-input").value = "";
+        document.getElementById("subject-save-btn-text").textContent = "Add Subject";
+        document.getElementById("subject-edit-badge").classList.add("hidden");
+        document.getElementById("subject-cancel-edit-btn").classList.add("hidden");
+      });
+
+      document.getElementById("subject-crud-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const batchId = document.getElementById("admin-subject-batch-select").value;
+        const editId = document.getElementById("subject-edit-id").value.trim();
+        const name = document.getElementById("subject-name-input").value.trim();
+        const icon = document.getElementById("subject-icon-input").value;
+        const color = document.getElementById("subject-color-input").value;
+        if (!batchId) return;
+
+        if (editId) {
+          await update(ref(db, `batches/${batchId}/subjects/${editId}`), { name, icon, color });
+          showToast("Subject updated!", "success");
+        } else {
+          const sRef = push(ref(db, `batches/${batchId}/subjects`));
+          await set(sRef, { id: sRef.key, name, icon, color, createdAt: Date.now(), contents: {} });
+          showToast("Subject added!", "success");
+        }
+        document.getElementById("subject-cancel-edit-btn").click();
+      });
+
+      document.getElementById("admin-content-batch-select").addEventListener("change", (e) => populateAdminContentSubjectsDropdown(e.target.value));
+      document.getElementById("admin-content-subject-select").addEventListener("change", (e) => {
+        renderAdminContentsList(document.getElementById("admin-content-batch-select").value, e.target.value);
+      });
+
+      document.getElementById("content-crud-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const batchId = document.getElementById("admin-content-batch-select").value;
+        const subjectId = document.getElementById("admin-content-subject-select").value;
+        const type = document.getElementById("content-type-input").value;
+        const title = document.getElementById("content-title-input").value.trim();
+        const rawUrl = document.getElementById("content-url-input").value.trim();
+        if (!batchId || !subjectId) return;
+
+        const ytId = type === "playlist" ? extractPlaylistId(rawUrl) : extractVideoId(rawUrl);
+        if (!ytId) return showToast("Invalid YouTube URL or ID!", "error");
+
+        const cRef = push(ref(db, `batches/${batchId}/subjects/${subjectId}/contents`));
+        await set(cRef, { id: cRef.key, title, type, ytId, addedAt: Date.now() });
+        document.getElementById("content-title-input").value = "";
+        document.getElementById("content-url-input").value = "";
+        showToast("Module added to Subject!", "success");
+      });
+
+      document.getElementById("cancel-delete-btn").addEventListener("click", () => {
+        state.pendingDeleteBatchId = null;
+        document.getElementById("delete-modal").classList.add("hidden");
+      });
+      document.getElementById("confirm-delete-btn").addEventListener("click", async () => {
+        if (state.pendingDeleteBatchId) {
+          await remove(ref(db, `batches/${state.pendingDeleteBatchId}`));
+          showToast("Batch deleted.", "success");
+        }
+        state.pendingDeleteBatchId = null;
+        document.getElementById("delete-modal").classList.add("hidden");
+      });
+
+      document.getElementById("global-settings-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        await update(ref(db, "settings"), {
+          adminPin: document.getElementById("settings-pin-input").value.trim() || "1234",
+          ytApiKey: document.getElementById("settings-ytkey-input").value.trim()
+        });
+        showToast("Settings saved!", "success");
+      });
+    }
+
+    // ----------------------------------------------------------
+    // 19. BOOTSTRAP APPLICATION
+    // ----------------------------------------------------------
+    applyTheme(state.theme);
+    updatePomodoroUI();
+    applyPreferredPlaybackSpeed(state.preferredSpeed, false);
+    initProgressiveWebApp();
+    initPlayerGestureShield();
+    bindAllEvents();
+    loadYouTubeIframeApiScriptOnce();
+    initFirebaseSync();
+  </script>
+</body>
+</html>
