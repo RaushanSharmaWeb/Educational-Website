@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="StudyPro" />
   <title>Study With Pro — Personal Focus Portal</title>
 
-  <!-- Dynamic PWA Manifest Link (Populated via JS on Boot) -->
+  <!-- Dynamic PWA Manifest Link -->
   <link rel="manifest" id="pwa-manifest-link" />
 
   <!-- Tailwind CSS CDN -->
@@ -95,7 +95,7 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
     /* ==========================================================
-       CUSTOM SINGLETON VIDEO PLAYER & GESTURE OVERLAYS
+       BUG 1 FIX: FULLSCREEN BORDER, CORNERS & SCREEN FIT / ZOOM
        ========================================================== */
     #player-wrapper {
       aspect-ratio: 16 / 9;
@@ -108,15 +108,63 @@
       width: 100%;
     }
 
+    /* Normal 16:9 frame — ZERO top/bottom cropping */
+    .yt-crop-frame {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .yt-crop-frame iframe {
+      width: 100% !important;
+      height: 100% !important;
+      border: 0 !important;
+      pointer-events: none;
+      transition: transform 0.25s ease;
+    }
+
+    /* Strict Fullscreen CSS rules */
     #player-wrapper:fullscreen,
-    #player-wrapper:-webkit-full-screen,
-    #player-wrapper:-ms-fullscreen {
+    #player-wrapper:-webkit-full-screen {
       width: 100vw !important;
       height: 100vh !important;
+      max-width: 100vw !important;
       max-height: 100vh !important;
-      aspect-ratio: auto !important;
-      border-radius: 0 !important;
+      aspect-ratio: unset !important;
       border: none !important;
+      border-radius: 0 !important;
+      outline: none !important;
+      box-shadow: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #000000 !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden !important;
+    }
+
+    #player-wrapper:fullscreen *,
+    #player-wrapper:-webkit-full-screen * {
+      border-radius: 0 !important;
+    }
+
+    #player-wrapper:fullscreen iframe,
+    #player-wrapper:-webkit-full-screen iframe {
+      width: 100vw !important;
+      height: 100vh !important;
+      border: none !important;
+      transition: transform 0.25s ease;
+    }
+
+    /* Zoom-to-Fill Mode class for 20:9 mobile screens */
+    #player-wrapper.zoom-fill iframe {
+      transform: scale(1.22) !important;
     }
 
     /* Sticky Mobile Video Container (< 768px) */
@@ -132,23 +180,6 @@
         border-left: none !important;
         border-right: none !important;
       }
-    }
-
-    /* Crop out native YouTube watermark/title overlays */
-    .yt-crop-frame {
-      position: absolute;
-      top: -64px;
-      left: 0;
-      width: 100%;
-      height: calc(100% + 128px);
-      pointer-events: none;
-    }
-
-    .yt-crop-frame iframe {
-      width: 100% !important;
-      height: 100% !important;
-      border: 0;
-      pointer-events: none;
     }
 
     /* Interactive Gesture & Protection Shield */
@@ -186,7 +217,7 @@
     #custom-controls {
       z-index: 25;
       transition: opacity 0.25s ease, transform 0.25s ease;
-      background: linear-gradient(to top, rgba(2, 6, 23, 0.96) 0%, rgba(2, 6, 23, 0.82) 65%, transparent 100%);
+      background: linear-gradient(to top, rgba(2, 6, 23, 0.96) 0%, rgba(2, 6, 23, 0.84) 68%, transparent 100%);
     }
 
     #custom-controls.controls-hidden {
@@ -195,11 +226,11 @@
       transform: translateY(8px);
     }
 
-    /* Custom Dual-Layer Seekbar (Buffered + Played + Thumb) */
+    /* Custom Dual-Layer Seekbar */
     .timeline-container {
       position: relative;
       width: 100%;
-      height: 20px;
+      height: 18px;
       display: flex;
       align-items: center;
       cursor: pointer;
@@ -209,7 +240,7 @@
       position: relative;
       width: 100%;
       height: 5px;
-      background: rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.24);
       border-radius: 999px;
       overflow: hidden;
       transition: height 0.15s ease;
@@ -225,7 +256,7 @@
       left: 0;
       height: 100%;
       width: 0%;
-      background: rgba(255, 255, 255, 0.42);
+      background: rgba(255, 255, 255, 0.45);
       border-radius: 999px;
       pointer-events: none;
     }
@@ -258,27 +289,27 @@
     #seek-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
       background: #6366f1;
       border: 2px solid #ffffff;
-      box-shadow: 0 0 10px rgba(99, 102, 241, 0.95);
+      box-shadow: 0 0 8px rgba(99, 102, 241, 0.95);
       cursor: pointer;
       transition: transform 0.15s ease;
     }
 
     #seek-slider:hover::-webkit-slider-thumb {
-      transform: scale(1.22);
+      transform: scale(1.2);
     }
 
     #seek-slider::-moz-range-thumb {
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
       background: #6366f1;
       border: 2px solid #ffffff;
-      box-shadow: 0 0 10px rgba(99, 102, 241, 0.95);
+      box-shadow: 0 0 8px rgba(99, 102, 241, 0.95);
       cursor: pointer;
     }
 
@@ -316,21 +347,20 @@
 <body class="min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
 
   <!-- ==========================================================
-       TOP NAVBAR (BRAND + SEARCH + POMODORO + PWA INSTALL + THEME)
+       BUG 4 FIX (PART A): COMPACT NON-OVERFLOWING MOBILE TOP NAVBAR
        ========================================================== -->
-  <header class="sticky top-0 z-40 swp-card/95 backdrop-blur-md border-b swp-border transition-colors">
-    <div class="max-w-[1440px] mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-3">
+  <header class="sticky top-0 z-40 swp-card/95 backdrop-blur-md border-b swp-border transition-colors w-full">
+    <div class="max-w-[1440px] mx-auto px-2 py-1.5 sm:px-6 sm:h-16 flex items-center justify-between gap-1 sm:gap-3 w-full overflow-hidden">
 
-      <!-- Brand Logo -->
-      <div id="brand-logo-btn" class="flex items-center gap-2.5 cursor-pointer group shrink-0">
-        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform">
-          <i class="fa-solid fa-graduation-cap text-white text-base sm:text-lg"></i>
+      <!-- Brand Logo (Compact on <640px) -->
+      <div id="brand-logo-btn" class="flex items-center gap-1.5 sm:gap-2.5 cursor-pointer group shrink-0">
+        <div class="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+          <i class="fa-solid fa-graduation-cap text-white text-xs sm:text-lg"></i>
         </div>
         <div>
-          <div class="flex items-center gap-1.5">
-            <span class="font-bold text-sm sm:text-lg tracking-tight font-display swp-text">
-              Study With Pro
-            </span>
+          <div class="flex items-center gap-1">
+            <span class="hidden sm:inline font-bold text-base sm:text-lg tracking-tight font-display swp-text">Study With Pro</span>
+            <span class="sm:hidden text-xs font-bold tracking-tight font-display swp-text">StudyPro</span>
             <span class="hidden xl:inline-flex items-center px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 rounded-full">
               Focus Portal
             </span>
@@ -361,22 +391,22 @@
       </div>
 
       <!-- Built-In Compact Pomodoro Study Timer -->
-      <div class="relative flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 rounded-xl swp-elevated border swp-border shrink-0">
+      <div class="relative flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg sm:rounded-xl swp-elevated border swp-border shrink-0 text-xs">
         <button
           id="pomodoro-config-btn"
           type="button"
-          class="flex items-center gap-1.5 text-xs font-bold swp-text hover:text-indigo-400 transition"
+          class="flex items-center gap-1 text-xs font-bold swp-text hover:text-indigo-400 transition"
           title="Configure Study Timer"
         >
-          <i class="fa-solid fa-brain text-indigo-400 text-xs"></i>
-          <span id="pomodoro-time-display" class="font-mono text-xs sm:text-sm tracking-tight">25:00</span>
+          <i class="fa-solid fa-brain text-indigo-400 text-[11px]"></i>
+          <span id="pomodoro-time-display" class="font-mono text-[11px] sm:text-sm tracking-tight">25:00</span>
           <span id="pomodoro-mode-badge" class="hidden lg:inline-block text-[10px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-400 uppercase">Focus</span>
         </button>
 
         <button
           id="pomodoro-toggle-btn"
           type="button"
-          class="w-6 h-6 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center text-[10px] transition"
+          class="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center text-[9px] sm:text-[10px] transition"
           title="Start / Pause Timer"
         >
           <i id="pomodoro-toggle-icon" class="fa-solid fa-play"></i>
@@ -385,7 +415,7 @@
         <button
           id="pomodoro-reset-btn"
           type="button"
-          class="w-6 h-6 rounded-lg hover:bg-gray-500/20 swp-text-sec flex items-center justify-center text-[10px] transition"
+          class="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg hover:bg-gray-500/20 swp-text-sec flex items-center justify-center text-[9px] sm:text-[10px] transition"
           title="Reset Timer"
         >
           <i class="fa-solid fa-rotate-left"></i>
@@ -394,7 +424,7 @@
         <!-- Pomodoro Popover -->
         <div
           id="pomodoro-popover"
-          class="hidden absolute top-12 right-0 w-64 rounded-2xl swp-card border swp-border shadow-2xl p-4 z-50 space-y-3"
+          class="hidden fixed sm:absolute top-14 sm:top-12 right-2 sm:right-0 w-64 rounded-2xl swp-card border swp-border shadow-2xl p-4 z-50 space-y-3"
         >
           <div class="flex items-center justify-between border-b swp-border pb-2">
             <span class="text-xs font-bold swp-text flex items-center gap-1.5">
@@ -430,16 +460,16 @@
         </div>
       </div>
 
-      <!-- Right Action Buttons -->
-      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+      <!-- Right Action Buttons (Compact 28px/32px on Mobile so 100vw never overflows) -->
+      <div class="flex items-center gap-1 sm:gap-2 shrink-0">
         <!-- PWA Install App Button -->
         <button
           id="pwa-install-btn"
           type="button"
-          class="px-2.5 sm:px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-sm"
+          class="h-7 sm:h-9 px-2 sm:px-3 rounded-lg sm:rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-sm"
           title="Install Study With Pro App"
         >
-          <i class="fa-solid fa-mobile-screen-button"></i>
+          <i class="fa-solid fa-mobile-screen-button text-xs"></i>
           <span class="hidden sm:inline">Install App</span>
         </button>
 
@@ -447,19 +477,20 @@
         <button
           id="theme-toggle-btn"
           type="button"
-          class="w-9 h-9 rounded-xl swp-elevated border swp-border flex items-center justify-center swp-text hover:text-indigo-400 transition"
+          class="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl swp-elevated border swp-border flex items-center justify-center swp-text hover:text-indigo-400 transition"
           title="Toggle Light / Dark Theme"
         >
-          <i id="theme-toggle-icon" class="fa-solid fa-sun text-amber-400 text-sm"></i>
+          <i id="theme-toggle-icon" class="fa-solid fa-sun text-amber-400 text-xs sm:text-sm"></i>
         </button>
 
         <!-- All Batches Button -->
         <button
           id="nav-home-btn"
           type="button"
-          class="px-2.5 sm:px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 bg-indigo-600 text-white shadow-sm"
+          class="h-7 sm:h-9 px-2 sm:px-3 rounded-lg sm:rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow-sm"
+          title="All Batches"
         >
-          <i class="fa-solid fa-layer-group"></i>
+          <i class="fa-solid fa-layer-group text-xs"></i>
           <span class="hidden lg:inline">Batches</span>
         </button>
 
@@ -467,9 +498,10 @@
         <button
           id="nav-admin-btn"
           type="button"
-          class="px-2.5 sm:px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 swp-elevated border swp-border swp-text"
+          class="h-7 sm:h-9 px-2 sm:px-3 rounded-lg sm:rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 swp-elevated border swp-border swp-text"
+          title="Admin Panel"
         >
-          <i id="admin-lock-icon" class="fa-solid fa-lock text-amber-400"></i>
+          <i id="admin-lock-icon" class="fa-solid fa-lock text-amber-400 text-xs"></i>
           <span class="hidden lg:inline">Admin</span>
         </button>
       </div>
@@ -484,20 +516,20 @@
     <!-- ========================================================
          VIEW 1: STUDENT HOME PANEL (BATCHES EXPLORER)
          ======================================================== -->
-    <section id="view-home" class="px-4 sm:px-0 py-5 sm:py-0 space-y-6">
+    <section id="view-home" class="px-3 sm:px-0 py-4 sm:py-0 space-y-5 sm:space-y-6">
 
       <!-- Hero Focus Banner -->
-      <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 border border-indigo-500/30 p-6 sm:p-8 shadow-xl text-white">
-        <div class="relative z-10 max-w-2xl space-y-3">
+      <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 border border-indigo-500/30 p-5 sm:p-8 shadow-xl text-white">
+        <div class="relative z-10 max-w-2xl space-y-2.5 sm:space-y-3">
           <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-semibold">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
             <span>Personal Anti-Distraction Study Portal</span>
           </div>
-          <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight font-display">
+          <h1 class="text-xl sm:text-4xl font-extrabold tracking-tight font-display">
             Deep Focus. Structured Subjects. <span class="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Zero Distractions.</span>
           </h1>
           <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">
-            Organize your courses by Batch → Subject → Chapter Playlists & Live Sessions. Use touch gestures (double-tap 10s seek, hold for 2x speed), take timestamped notes, and track syllabus progress.
+            Organize your courses by Batch → Subject → Chapter Playlists & Live Sessions. Use touch gestures (double-tap 10s seek, hold for 2x speed, pinch to zoom), take timestamped notes, and track syllabus progress.
           </p>
         </div>
         <div class="hidden lg:flex items-center justify-center absolute right-10 top-1/2 -translate-y-1/2 opacity-15 pointer-events-none">
@@ -519,12 +551,12 @@
       </div>
 
       <!-- Global Auto-Resume Banner (Bound to study_resume_state) -->
-      <div id="home-resume-banner" class="hidden rounded-2xl swp-card border border-indigo-500/40 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-md">
-        <div class="flex items-center gap-3.5 min-w-0">
-          <div class="w-11 h-11 rounded-xl bg-indigo-600/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
-            <i class="fa-solid fa-clock-rotate-left text-lg"></i>
+      <div id="home-resume-banner" class="hidden rounded-2xl swp-card border border-indigo-500/40 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 shadow-md">
+        <div class="flex items-center gap-3 min-w-0 w-full sm:w-auto">
+          <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-indigo-600/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+            <i class="fa-solid fa-clock-rotate-left text-base sm:text-lg"></i>
           </div>
-          <div class="min-w-0">
+          <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2">
               <span class="text-[10px] uppercase tracking-wider font-bold text-indigo-400">Continue Where You Left Off</span>
               <span id="home-resume-speed-badge" class="px-1.5 py-0.2 rounded bg-purple-500/15 text-purple-400 text-[10px] font-bold">1x</span>
@@ -537,7 +569,7 @@
           <button
             id="home-resume-btn"
             type="button"
-            class="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25"
+            class="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25"
           >
             <i class="fa-solid fa-play"></i>
             <span>Resume Now</span>
@@ -620,18 +652,18 @@
     </section>
 
     <!-- ========================================================
-         VIEW 2: CLASSROOM VIEW (STICKY MOBILE PLAYER + GESTURES)
+         VIEW 2: CLASSROOM VIEW (STICKY MOBILE PLAYER + 2-ROW CONTROLS)
          ======================================================== -->
     <section id="view-classroom" class="hidden space-y-3 sm:space-y-4">
 
       <!-- Top Classroom Navigation & Subject Tabs Bar -->
-      <div class="px-3 sm:px-0 pt-3 sm:pt-0 space-y-3">
+      <div class="px-3 sm:px-0 pt-2.5 sm:pt-0 space-y-2.5">
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-2.5 min-w-0">
+          <div class="flex items-center gap-2 min-w-0">
             <button
               id="back-to-batches-btn"
               type="button"
-              class="px-3 py-2 rounded-xl swp-card hover:border-indigo-500/50 border swp-border swp-text text-xs font-semibold flex items-center gap-1.5 transition shrink-0"
+              class="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl swp-card hover:border-indigo-500/50 border swp-border swp-text text-xs font-semibold flex items-center gap-1.5 transition shrink-0"
             >
               <i class="fa-solid fa-arrow-left text-indigo-400"></i>
               <span>Batches</span>
@@ -643,12 +675,12 @@
               </div>
               <div class="flex items-center gap-2 text-[11px] swp-text-sec">
                 <span>Progress: <strong id="classroom-batch-progress-text" class="text-emerald-400">0%</strong></span>
-                <span class="hidden md:inline">• Double-tap sides: ±10s | Hold video: 2x Speed | Alt+N: Save Note</span>
+                <span class="hidden md:inline">• Double-tap sides: ±10s | Hold: 2x Speed | Pinch: Zoom Fit</span>
               </div>
             </div>
           </div>
 
-          <div class="flex items-center gap-2 shrink-0">
+          <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               id="theater-mode-btn"
               type="button"
@@ -662,7 +694,7 @@
             <button
               id="classroom-share-btn"
               type="button"
-              class="px-3 py-2 rounded-xl swp-card border swp-border text-xs font-semibold swp-text hover:border-indigo-500 flex items-center gap-1.5 transition"
+              class="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl swp-card border swp-border text-xs font-semibold swp-text hover:border-indigo-500 flex items-center gap-1.5 transition"
             >
               <i class="fa-solid fa-share-nodes text-indigo-400"></i>
               <span class="hidden sm:inline">Share</span>
@@ -684,7 +716,7 @@
           <div id="mobile-sticky-player-box" class="swp-bg">
             <div id="player-wrapper" class="rounded-none sm:rounded-2xl border swp-border shadow-2xl">
 
-              <!-- Cropped YouTube Iframe Container (Singleton Mount Point) -->
+              <!-- Normal 16:9 YouTube Iframe Container (Singleton Mount Point) -->
               <div class="yt-crop-frame">
                 <div id="yt-player"></div>
               </div>
@@ -695,19 +727,28 @@
               <!-- Press & Hold 2x Speed Boost Badge (Top-Center) -->
               <div
                 id="speed-2x-badge"
-                class="hidden absolute top-4 left-1/2 -translate-x-1/2 z-30 px-3.5 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-amber-400/50 text-amber-300 text-xs font-bold flex items-center gap-2 pointer-events-none shadow-2xl"
+                class="hidden absolute top-3 left-1/2 -translate-x-1/2 z-30 px-3 py-1 rounded-full bg-black/85 backdrop-blur-md border border-amber-400/50 text-amber-300 text-[11px] font-bold flex items-center gap-1.5 pointer-events-none shadow-2xl"
               >
                 <i class="fa-solid fa-bolt animate-bounce"></i>
                 <span>Playing at 2x speed</span>
               </div>
 
+              <!-- Screen Fit / Zoom Mode Feedback Badge (Top-Center) -->
+              <div
+                id="zoom-mode-badge"
+                class="hidden absolute top-3 left-1/2 -translate-x-1/2 z-30 px-3 py-1 rounded-full bg-black/85 backdrop-blur-md border border-indigo-400/50 text-indigo-300 text-[11px] font-bold flex items-center gap-1.5 pointer-events-none shadow-2xl"
+              >
+                <i class="fa-solid fa-expand-arrows-alt"></i>
+                <span id="zoom-mode-badge-text">Screen: Zoomed to Fill</span>
+              </div>
+
               <!-- Double-Tap Left Zone Rewind Ripple (0% - 35% width) -->
               <div
                 id="gesture-ripple-left"
-                class="hidden absolute inset-y-0 left-0 w-[36%] z-20 bg-white/15 backdrop-blur-[2px] rounded-r-full flex flex-col items-center justify-center text-white pointer-events-none"
+                class="hidden absolute inset-y-0 left-0 w-[35%] z-20 bg-white/15 backdrop-blur-[2px] rounded-r-full flex flex-col items-center justify-center text-white pointer-events-none"
               >
-                <div class="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center mb-1">
-                  <i class="fa-solid fa-angles-left text-xl"></i>
+                <div class="w-11 h-11 rounded-full bg-black/50 flex items-center justify-center mb-1">
+                  <i class="fa-solid fa-angles-left text-lg"></i>
                 </div>
                 <span id="gesture-left-text" class="text-xs font-extrabold tracking-wide">⏪ 10s</span>
               </div>
@@ -715,10 +756,10 @@
               <!-- Double-Tap Right Zone Forward Ripple (65% - 100% width) -->
               <div
                 id="gesture-ripple-right"
-                class="hidden absolute inset-y-0 right-0 w-[36%] z-20 bg-white/15 backdrop-blur-[2px] rounded-l-full flex flex-col items-center justify-center text-white pointer-events-none"
+                class="hidden absolute inset-y-0 right-0 w-[35%] z-20 bg-white/15 backdrop-blur-[2px] rounded-l-full flex flex-col items-center justify-center text-white pointer-events-none"
               >
-                <div class="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center mb-1">
-                  <i class="fa-solid fa-angles-right text-xl"></i>
+                <div class="w-11 h-11 rounded-full bg-black/50 flex items-center justify-center mb-1">
+                  <i class="fa-solid fa-angles-right text-lg"></i>
                 </div>
                 <span id="gesture-right-text" class="text-xs font-extrabold tracking-wide">10s ⏩</span>
               </div>
@@ -726,9 +767,9 @@
               <!-- Center Play/Pause Ripple Feedback -->
               <div
                 id="player-center-ripple"
-                class="hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-16 h-16 rounded-full bg-indigo-600/85 backdrop-blur-md text-white flex items-center justify-center pointer-events-none shadow-2xl"
+                class="hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-indigo-600/85 backdrop-blur-md text-white flex items-center justify-center pointer-events-none shadow-2xl"
               >
-                <i id="player-center-ripple-icon" class="fa-solid fa-play text-2xl"></i>
+                <i id="player-center-ripple-icon" class="fa-solid fa-play text-xl sm:text-2xl"></i>
               </div>
 
               <!-- SINGLE Custom Loading / Buffering Spinner Overlay -->
@@ -736,16 +777,16 @@
                 id="player-loading-overlay"
                 class="hidden absolute inset-0 z-20 bg-black/60 backdrop-blur-[1px] flex flex-col items-center justify-center gap-2 pointer-events-none"
               >
-                <div class="w-11 h-11 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                 <span id="player-loading-text" class="text-xs font-semibold text-slate-200">Buffering Stream...</span>
               </div>
 
-              <!-- Responsive Speed & Quality Overlay Modal (Inside Player Wrapper so it works in Fullscreen & Mobile) -->
+              <!-- Responsive Speed & Quality Overlay Modal (Inside Player Wrapper for Fullscreen Support) -->
               <div
                 id="player-menu-modal"
-                class="hidden absolute inset-0 z-30 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-3 sm:p-6"
+                class="hidden absolute inset-0 z-30 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-2.5 sm:p-6"
               >
-                <div class="w-full max-w-xs rounded-2xl bg-slate-900/95 border border-slate-700 p-4 text-white shadow-2xl space-y-3 max-h-[88%] overflow-y-auto">
+                <div class="w-full max-w-xs rounded-2xl bg-slate-900/95 border border-slate-700 p-3.5 sm:p-4 text-white shadow-2xl space-y-2.5 max-h-[90%] overflow-y-auto">
                   <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                     <span id="player-menu-title" class="text-xs font-bold uppercase tracking-wider text-indigo-400">Playback Settings</span>
                     <button id="close-player-menu-btn" type="button" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-xs">
@@ -756,91 +797,119 @@
                 </div>
               </div>
 
-              <!-- Custom Bottom Control Bar -->
-              <div id="custom-controls" class="absolute bottom-0 inset-x-0 px-2.5 sm:px-4 pt-6 pb-2 sm:pb-3 flex flex-col gap-1.5 select-none">
+              <!-- ====================================================
+                   BUG 4 FIX (PART B): 2-ROW MOBILE CONTROL BAR LAYOUT
+                   ==================================================== -->
+              <div id="custom-controls" class="absolute bottom-0 inset-x-0 px-2 sm:px-4 pt-5 pb-1.5 sm:pb-2.5 flex flex-col gap-1 select-none">
 
-                <!-- Interactive Timeline / Seekbar with Buffered Progress & Hover Timestamp -->
-                <div id="timeline-wrapper" class="timeline-container group">
-                  <!-- Hover Timestamp Tooltip -->
-                  <div
-                    id="seek-hover-tooltip"
-                    class="hidden absolute -top-7 -translate-x-1/2 px-2 py-0.5 rounded bg-slate-900/95 border border-slate-700 text-white font-mono text-[10px] font-bold pointer-events-none shadow"
-                  >
-                    00:00
+                <!-- TOP ROW: Timestamp Strip + Live Badge + Full-Width Seekbar -->
+                <div class="flex flex-col gap-0.5 w-full">
+                  <div class="flex items-center justify-between px-0.5">
+                    <!-- Current Time / Total Duration -->
+                    <div id="time-display-box" class="text-[11px] font-mono text-slate-200 tracking-tight leading-none">
+                      <span id="current-time-text">00:00</span>
+                      <span class="text-slate-400 mx-0.5">/</span>
+                      <span id="duration-time-text">00:00</span>
+                    </div>
+
+                    <!-- LIVE Stream Badge & Go Live Button -->
+                    <div id="live-stream-controls" class="hidden items-center gap-1.5">
+                      <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold uppercase leading-none">
+                        <span class="w-1.5 h-1.5 rounded-full bg-white live-dot"></span>
+                        LIVE
+                      </span>
+                      <button
+                        id="sync-live-btn"
+                        type="button"
+                        class="px-2 py-0.5 rounded bg-white/15 hover:bg-indigo-600 text-[10px] font-semibold text-white transition leading-none"
+                      >
+                        Go Live
+                      </button>
+                    </div>
                   </div>
-                  <div class="timeline-track">
-                    <div id="seek-buffered-bar"></div>
-                    <div id="seek-played-bar"></div>
+
+                  <!-- Interactive Seekbar -->
+                  <div id="timeline-wrapper" class="timeline-container group">
+                    <div
+                      id="seek-hover-tooltip"
+                      class="hidden absolute -top-6 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-900/95 border border-slate-700 text-white font-mono text-[10px] font-bold pointer-events-none shadow"
+                    >
+                      00:00
+                    </div>
+                    <div class="timeline-track">
+                      <div id="seek-buffered-bar"></div>
+                      <div id="seek-played-bar"></div>
+                    </div>
+                    <input
+                      id="seek-slider"
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="0.05"
+                      value="0"
+                      aria-label="Seek Timeline"
+                    />
                   </div>
-                  <input
-                    id="seek-slider"
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="0.05"
-                    value="0"
-                    aria-label="Seek Timeline"
-                  />
                 </div>
 
-                <!-- Touch-Friendly Controls Row -->
-                <div class="flex items-center justify-between gap-1 text-white">
-                  <!-- Left Controls -->
-                  <div class="flex items-center gap-0.5 sm:gap-1.5">
+                <!-- BOTTOM ROW: Left & Right Action Buttons (Fits 360px Mobile Cleanly) -->
+                <div class="flex items-center justify-between w-full text-white">
+                  <!-- Left Group: Play/Pause, Prev, -10s, +10s, Next, Mute (+ Desktop Volume Slider) -->
+                  <div class="flex items-center gap-1">
                     <button
                       id="ctrl-play-btn"
                       type="button"
-                      class="min-w-[36px] min-h-[36px] rounded-xl hover:bg-white/15 flex items-center justify-center transition"
+                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs sm:text-sm transition"
                       title="Play / Pause (Space or K)"
                     >
-                      <i id="ctrl-play-icon" class="fa-solid fa-play text-sm sm:text-base"></i>
+                      <i id="ctrl-play-icon" class="fa-solid fa-play"></i>
                     </button>
 
                     <button
                       id="ctrl-prev-btn"
                       type="button"
-                      class="min-w-[34px] min-h-[36px] rounded-xl hover:bg-white/15 flex items-center justify-center transition text-slate-200 hover:text-white"
+                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs text-slate-200 hover:text-white transition"
                       title="Previous Lecture"
                     >
-                      <i class="fa-solid fa-backward-step text-xs sm:text-sm"></i>
+                      <i class="fa-solid fa-backward-step"></i>
                     </button>
 
                     <button
                       id="ctrl-rewind-btn"
                       type="button"
-                      class="min-w-[34px] min-h-[36px] rounded-xl hover:bg-white/15 flex items-center justify-center transition text-slate-200 hover:text-white"
+                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs text-slate-200 hover:text-white transition"
                       title="Rewind 10s (J or Left Arrow)"
                     >
-                      <i class="fa-solid fa-rotate-left text-xs sm:text-sm"></i>
+                      <i class="fa-solid fa-rotate-left"></i>
                     </button>
 
                     <button
                       id="ctrl-forward-btn"
                       type="button"
-                      class="min-w-[34px] min-h-[36px] rounded-xl hover:bg-white/15 flex items-center justify-center transition text-slate-200 hover:text-white"
+                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs text-slate-200 hover:text-white transition"
                       title="Forward 10s (L or Right Arrow)"
                     >
-                      <i class="fa-solid fa-rotate-right text-xs sm:text-sm"></i>
+                      <i class="fa-solid fa-rotate-right"></i>
                     </button>
 
                     <button
                       id="ctrl-next-btn"
                       type="button"
-                      class="min-w-[34px] min-h-[36px] rounded-xl hover:bg-white/15 flex items-center justify-center transition text-slate-200 hover:text-white"
+                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs text-slate-200 hover:text-white transition"
                       title="Next Lecture"
                     >
-                      <i class="fa-solid fa-forward-step text-xs sm:text-sm"></i>
+                      <i class="fa-solid fa-forward-step"></i>
                     </button>
 
-                    <!-- Volume Button + Expandable Slider -->
-                    <div class="flex items-center gap-1 group/vol">
+                    <!-- Mute Icon + Volume Range Slider (Hidden on <640px Mobile) -->
+                    <div class="flex items-center gap-1">
                       <button
                         id="ctrl-mute-btn"
                         type="button"
-                        class="min-w-[34px] min-h-[36px] rounded-xl hover:bg-white/15 flex items-center justify-center transition"
+                        class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs transition"
                         title="Mute / Unmute (M)"
                       >
-                        <i id="ctrl-volume-icon" class="fa-solid fa-volume-high text-xs sm:text-sm"></i>
+                        <i id="ctrl-volume-icon" class="fa-solid fa-volume-high"></i>
                       </button>
                       <input
                         id="volume-slider"
@@ -848,55 +917,32 @@
                         min="0"
                         max="100"
                         value="100"
-                        class="vol-slider hidden sm:block w-14 md:w-20"
+                        class="vol-slider hidden sm:block w-16 md:w-20"
                         title="Volume"
                       />
                     </div>
-
-                    <!-- Time Display -->
-                    <div id="time-display-box" class="text-[10px] sm:text-xs font-mono text-slate-200 ml-1 shrink-0">
-                      <span id="current-time-text">00:00</span>
-                      <span class="text-slate-500">/</span>
-                      <span id="duration-time-text">00:00</span>
-                    </div>
-
-                    <!-- LIVE Stream Badge & Go Live Button -->
-                    <div id="live-stream-controls" class="hidden items-center gap-1.5 ml-1">
-                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold uppercase">
-                        <span class="w-1.5 h-1.5 rounded-full bg-white live-dot"></span>
-                        LIVE
-                      </span>
-                      <button
-                        id="sync-live-btn"
-                        type="button"
-                        class="px-2 py-0.5 rounded bg-white/15 hover:bg-indigo-600 text-[10px] font-semibold text-white transition"
-                      >
-                        Go Live
-                      </button>
-                    </div>
                   </div>
 
-                  <!-- Right Controls -->
-                  <div class="flex items-center gap-1 sm:gap-1.5">
+                  <!-- Right Group: Bookmark Note, Speed, Quality, Screen Zoom/Fit, Fullscreen -->
+                  <div class="flex items-center gap-1">
                     <!-- Quick Note Bookmark Button -->
                     <button
                       id="ctrl-quick-note-btn"
                       type="button"
-                      class="min-h-[34px] px-2 rounded-lg bg-indigo-600/85 hover:bg-indigo-500 text-[11px] font-bold text-white transition flex items-center gap-1"
+                      class="w-7 h-7 sm:w-auto sm:h-8 sm:px-2 rounded-lg bg-indigo-600/85 hover:bg-indigo-500 text-xs font-bold text-white transition flex items-center justify-center gap-1"
                       title="Bookmark Timestamp Note (Alt + N)"
                     >
                       <i class="fa-solid fa-bookmark text-[10px]"></i>
-                      <span class="hidden md:inline">+Note</span>
+                      <span class="hidden sm:inline text-[11px]">+Note</span>
                     </button>
 
                     <!-- Playback Speed Button -->
                     <button
                       id="ctrl-speed-btn"
                       type="button"
-                      class="min-h-[34px] px-2 sm:px-2.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[11px] sm:text-xs font-bold text-white transition flex items-center gap-1"
+                      class="h-7 sm:h-8 px-1.5 sm:px-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] sm:text-xs font-bold text-white transition flex items-center justify-center gap-1"
                       title="Playback Speed"
                     >
-                      <i class="fa-solid fa-gauge-high text-indigo-400 text-[10px]"></i>
                       <span id="speed-active-label">1x</span>
                     </button>
 
@@ -904,31 +950,30 @@
                     <button
                       id="ctrl-quality-btn"
                       type="button"
-                      class="min-h-[34px] px-2 sm:px-2.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[11px] sm:text-xs font-bold text-white transition flex items-center gap-1"
-                      title="Stream Quality"
+                      class="h-7 sm:h-8 px-1.5 sm:px-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] sm:text-xs font-bold text-white transition flex items-center justify-center gap-1"
+                      title="Video Quality"
                     >
-                      <i class="fa-solid fa-sliders text-purple-400 text-[10px]"></i>
                       <span id="quality-active-label">Auto</span>
                     </button>
 
-                    <!-- Picture-in-Picture / Focus Toggle (Desktop/Tablet) -->
+                    <!-- BUG 1 FIX: Screen Fit / Zoom Toggle Button -->
                     <button
-                      id="ctrl-pip-btn"
+                      id="ctrl-zoom-btn"
                       type="button"
-                      class="hidden sm:flex min-w-[34px] min-h-[36px] rounded-xl hover:bg-white/15 items-center justify-center transition"
-                      title="Mini / Theater View (T)"
+                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs transition"
+                      title="Screen Fit / Zoom to Fill (Z or Pinch)"
                     >
-                      <i class="fa-solid fa-tv text-xs"></i>
+                      <i id="ctrl-zoom-icon" class="fa-solid fa-expand-arrows-alt"></i>
                     </button>
 
                     <!-- Custom Fullscreen Button -->
                     <button
                       id="ctrl-fullscreen-btn"
                       type="button"
-                      class="min-w-[36px] min-h-[36px] rounded-xl hover:bg-white/15 flex items-center justify-center transition"
+                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs sm:text-sm transition"
                       title="Fullscreen (F)"
                     >
-                      <i id="ctrl-fullscreen-icon" class="fa-solid fa-expand text-sm"></i>
+                      <i id="ctrl-fullscreen-icon" class="fa-solid fa-expand"></i>
                     </button>
                   </div>
                 </div>
@@ -1051,10 +1096,10 @@
                 <div class="border-t swp-border pt-3">
                   <h4 class="text-xs font-bold uppercase tracking-wider swp-text-sec mb-2.5">Touch Gestures & Keyboard Shortcuts</h4>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Double-Tap Left Side</span><span class="font-bold text-indigo-400">⏪ Rewind 10s (Stackable)</span></div>
-                    <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Double-Tap Right Side</span><span class="font-bold text-indigo-400">Fast-Forward 10s ⏩</span></div>
+                    <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Double-Tap Left / Right</span><span class="font-bold text-indigo-400">⏪ ±10s Seek ⏩</span></div>
+                    <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Two-Finger Pinch / Z Key</span><span class="font-bold text-emerald-400">🔍 Zoom to Fill Screen</span></div>
                     <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Press & Hold Video</span><span class="font-bold text-amber-400">⚡ Temporary 2x Speed</span></div>
-                    <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Keyboard Play / Seek</span><span class="font-mono text-indigo-400">Space, K, J, L, F, M</span></div>
+                    <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Keyboard Shortcuts</span><span class="font-mono text-indigo-400">Space, K, J, L, F, Z, M</span></div>
                   </div>
                 </div>
               </div>
@@ -1137,10 +1182,10 @@
     <!-- ========================================================
          VIEW 3: ADMIN PANEL (HIERARCHICAL CRUD)
          ======================================================== -->
-    <section id="view-admin" class="hidden px-4 sm:px-0 py-5 sm:py-0 space-y-8">
+    <section id="view-admin" class="hidden px-3 sm:px-0 py-5 sm:py-0 space-y-8">
 
       <!-- Admin Top Banner -->
-      <div class="rounded-2xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border border-purple-500/30 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white shadow-xl">
+      <div class="rounded-2xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border border-purple-500/30 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white shadow-xl">
         <div class="space-y-1">
           <div class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-purple-400">
             <i class="fa-solid fa-sitemap"></i>
@@ -1472,7 +1517,7 @@
           </div>
           <div>
             <h3 class="text-base font-bold swp-text">Install Study With Pro App</h3>
-            <p class="text-xs swp-text-sec">Launch directly from your home screen in full-screen standalone mode</p>
+            <p class="text-xs swp-text-sec">Launch directly from your home screen in standalone mode</p>
           </div>
         </div>
         <button id="close-pwa-modal-btn" type="button" class="swp-text-sec hover:text-red-400">
@@ -1500,7 +1545,7 @@
   </div>
 
   <!-- TOAST NOTIFICATION CONTAINER -->
-  <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none"></div>
+  <div id="toast-container" class="fixed top-16 sm:top-20 right-3 sm:right-4 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none"></div>
 
   <!-- FOOTER -->
   <footer class="border-t swp-border py-5 mt-12 text-center text-xs swp-text-muted">
@@ -1514,7 +1559,7 @@
   </footer>
 
   <!-- ==========================================================
-       APPLICATION CORE LOGIC (SINGLETON YT PLAYER + PWA + FIREBASE)
+       APPLICATION CORE LOGIC (SINGLETON YT PLAYER + 5 BUG FIXES)
        ========================================================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
@@ -1587,10 +1632,9 @@
         const manifestUrl = URL.createObjectURL(manifestBlob);
         document.getElementById("pwa-manifest-link").setAttribute("href", manifestUrl);
 
-        // Register Service Worker via Blob URL with safe fallback
         if ("serviceWorker" in navigator && (window.location.protocol === "https:" || window.location.hostname === "localhost")) {
           const swCode = `
-            const CACHE_NAME = 'study-with-pro-v2';
+            const CACHE_NAME = 'study-with-pro-v3';
             self.addEventListener('install', (e) => self.skipWaiting());
             self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
             self.addEventListener('fetch', (e) => {
@@ -1604,7 +1648,6 @@
         }
       } catch (e) {}
 
-      // Hide install button if already running in standalone mode
       if (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true) {
         document.getElementById("pwa-install-btn").classList.add("hidden");
       }
@@ -1620,7 +1663,7 @@
       window.addEventListener("appinstalled", () => {
         deferredInstallPrompt = null;
         document.getElementById("pwa-install-btn").classList.add("hidden");
-        showToast("Study With Pro installed successfully!", "success");
+        showToast("Study With Pro installed!", "success");
       });
     }
 
@@ -1648,10 +1691,14 @@
       }
     }
 
+    let currentQuality = "default";
+    let currentVideoId = null;
+
     const state = {
       theme: localStorage.getItem("swp_theme") || "dark",
       currentView: "home",
       isTheaterMode: false,
+      isZoomFill: false,
       batches: {},
       studyNotesAll: safeJsonParse("swp_study_notes", {}),
       adminPin: "1234",
@@ -1692,7 +1739,7 @@
     };
 
     // ----------------------------------------------------------
-    // 4. STRICT SINGLETON YOUTUBE PLAYER (window.activeYTPlayer)
+    // 4. STRICT SINGLETON YOUTUBE PLAYER + BUG 2, 3, 5 FIXES
     // ----------------------------------------------------------
     window.activeYTPlayer = null;
     window.isYTPlayerReady = false;
@@ -1705,8 +1752,8 @@
     let currentVideoIsLive = false;
     let playlistPollTimer = null;
     let pomoInterval = null;
+    let zoomBadgeTimer = null;
 
-    // Load YouTube IFrame API Script Strictly Once
     function loadYouTubeIframeApiScriptOnce() {
       if (window.YT && window.YT.Player) return;
       if (document.getElementById("yt-iframe-api-script")) return;
@@ -1738,6 +1785,7 @@
       const mountEl = document.getElementById("yt-player");
       if (!mountEl || !window.YT || !window.YT.Player) return null;
 
+      // BUG 3 FIX: Enforce cc_load_policy: 0, iv_load_policy: 3, hl: 'en'
       window.activeYTPlayer = new window.YT.Player("yt-player", {
         height: "100%",
         width: "100%",
@@ -1746,7 +1794,9 @@
           modestbranding: 1,
           rel: 0,
           showinfo: 0,
+          cc_load_policy: 0,
           iv_load_policy: 3,
+          hl: "en",
           disablekb: 1,
           fs: 0,
           playsinline: 1,
@@ -1761,7 +1811,7 @@
               try { cb(window.activeYTPlayer); } catch (e) {}
             }
           },
-          onStateChange: handleSingletonPlayerStateChange,
+          onStateChange: onPlayerStateChange,
           onError: (e) => {
             setBufferingSpinner(false);
             showToast(`Stream error (Code ${e.data}). Try another lecture.`, "warning");
@@ -1784,24 +1834,40 @@
       const playIcon = document.getElementById("ctrl-play-icon");
       if (!playIcon || !window.YT) return;
       if (playerState === window.YT.PlayerState.PLAYING) {
-        playIcon.className = "fa-solid fa-pause text-sm sm:text-base";
+        playIcon.className = "fa-solid fa-pause";
       } else if (playerState === window.YT.PlayerState.ENDED) {
-        playIcon.className = "fa-solid fa-rotate-right text-sm sm:text-base";
+        playIcon.className = "fa-solid fa-rotate-right";
       } else {
-        playIcon.className = "fa-solid fa-play text-sm sm:text-base";
+        playIcon.className = "fa-solid fa-play";
       }
     }
 
-    function handleSingletonPlayerStateChange(event) {
+    function onPlayerStateChange(event) {
       const YTState = window.YT.PlayerState;
       const st = event.data;
 
-      // Always keep play/pause button icon strictly synced with actual player state
+      // BUG 5 FIX: Always keep Play/Pause button strictly synced with actual video state
       syncPlayPauseButtonIcon(st);
+
+      // BUG 2 FIX: Enforce selected quality on BUFFERING or PLAYING
+      if (st === YTState.BUFFERING || st === YTState.PLAYING) {
+        if (currentQuality && currentQuality !== "default") {
+          try {
+            event.target.setPlaybackQuality(currentQuality);
+          } catch (e) {}
+        }
+      }
+
+      // BUG 3 FIX: Force unload auto-captions / subtitles on PLAYING or CUED
+      if (st === YTState.PLAYING || st === YTState.CUED) {
+        try {
+          event.target.unloadModule("captions");
+          event.target.unloadModule("cc");
+        } catch (e) {}
+      }
 
       if (st === YTState.PLAYING) {
         setBufferingSpinner(false);
-        // Apply user's preferred playback rate (unless holding 2x gesture)
         if (!isHolding2x && window.activeYTPlayer.setPlaybackRate) {
           const targetRate = state.preferredSpeed || 1;
           if (window.activeYTPlayer.getPlaybackRate() !== targetRate) {
@@ -1848,16 +1914,13 @@
         const playerState = window.activeYTPlayer.getPlayerState ? window.activeYTPlayer.getPlayerState() : -1;
         currentVideoIsLive = Boolean((activeLecture && activeLecture.isLive) || (playerState === 1 && duration === 0));
 
-        const timeBox = document.getElementById("time-display-box");
         const liveControls = document.getElementById("live-stream-controls");
         if (currentVideoIsLive) {
           liveControls.classList.remove("hidden");
           liveControls.classList.add("flex");
-          timeBox.classList.add("hidden");
         } else {
           liveControls.classList.add("hidden");
           liveControls.classList.remove("flex");
-          timeBox.classList.remove("hidden");
         }
 
         // Update Buffered Bar
@@ -1870,7 +1933,7 @@
         const recentlyScrubbed = Date.now() - lastScrubTime < 350;
         if (!isScrubbing && !recentlyScrubbed) {
           document.getElementById("current-time-text").textContent = formatTime(current);
-          document.getElementById("duration-time-text").textContent = formatTime(duration);
+          document.getElementById("duration-time-text").textContent = currentVideoIsLive ? "LIVE" : formatTime(duration);
 
           const seekSlider = document.getElementById("seek-slider");
           const playedBar = document.getElementById("seek-played-bar");
@@ -1940,7 +2003,6 @@
         return;
       }
 
-      // Restore saved playback speed preference
       if (savedState.playbackRate) {
         applyPreferredPlaybackSpeed(savedState.playbackRate, false);
       }
@@ -1956,7 +2018,7 @@
     }
 
     // ----------------------------------------------------------
-    // 6. MULTI-TAP SEEK & 2X LONG-PRESS GESTURE ENGINE
+    // 6. SCREEN FIT / ZOOM TOGGLE + PINCH-TO-ZOOM + GESTURE ENGINE
     // ----------------------------------------------------------
     let lastTapTime = 0;
     let singleTapTimeout = null;
@@ -1967,6 +2029,33 @@
     let hold2xTimeout = null;
     let isHolding2x = false;
     let speedBeforeHold = 1;
+    let pinchStartDist = 0;
+
+    function toggleScreenZoomFill(forceState = null) {
+      const wrapper = document.getElementById("player-wrapper");
+      const icon = document.getElementById("ctrl-zoom-icon");
+      const badge = document.getElementById("zoom-mode-badge");
+      const badgeText = document.getElementById("zoom-mode-badge-text");
+      if (!wrapper) return;
+
+      state.isZoomFill = forceState !== null ? forceState : !state.isZoomFill;
+      wrapper.classList.toggle("zoom-fill", state.isZoomFill);
+
+      if (icon) {
+        icon.className = state.isZoomFill
+          ? "fa-solid fa-compress-arrows-alt text-indigo-400"
+          : "fa-solid fa-expand-arrows-alt";
+      }
+
+      const msg = state.isZoomFill ? "Screen: Zoomed to Fill" : "Screen: Original 16:9 Fit";
+      if (badge && badgeText) {
+        badgeText.textContent = msg;
+        badge.classList.remove("hidden");
+        if (zoomBadgeTimer) clearTimeout(zoomBadgeTimer);
+        zoomBadgeTimer = setTimeout(() => badge.classList.add("hidden"), 1600);
+      }
+      showToast(msg, "info");
+    }
 
     function initPlayerGestureShield() {
       const shield = document.getElementById("player-shield");
@@ -1975,8 +2064,41 @@
 
       wrapper.addEventListener("contextmenu", (e) => e.preventDefault());
 
+      // Two-Finger Pinch-Out / Pinch-In Gesture on #player-shield for Zoom-to-Fill
+      shield.addEventListener("touchstart", (e) => {
+        if (e.touches && e.touches.length === 2) {
+          if (hold2xTimeout) {
+            clearTimeout(hold2xTimeout);
+            hold2xTimeout = null;
+          }
+          const dx = e.touches[0].clientX - e.touches[1].clientX;
+          const dy = e.touches[0].clientY - e.touches[1].clientY;
+          pinchStartDist = Math.hypot(dx, dy);
+        }
+      }, { passive: true });
+
+      shield.addEventListener("touchmove", (e) => {
+        if (e.touches && e.touches.length === 2 && pinchStartDist > 0) {
+          const dx = e.touches[0].clientX - e.touches[1].clientX;
+          const dy = e.touches[0].clientY - e.touches[1].clientY;
+          const dist = Math.hypot(dx, dy);
+          if (dist - pinchStartDist > 32 && !state.isZoomFill) {
+            pinchStartDist = 0;
+            toggleScreenZoomFill(true);
+          } else if (pinchStartDist - dist > 32 && state.isZoomFill) {
+            pinchStartDist = 0;
+            toggleScreenZoomFill(false);
+          }
+        }
+      }, { passive: true });
+
+      shield.addEventListener("touchend", () => {
+        pinchStartDist = 0;
+      }, { passive: true });
+
       // Press & Hold (> 400ms) for Temporary 2x Speed
-      const startHoldCheck = () => {
+      const startHoldCheck = (e) => {
+        if (e.touches && e.touches.length > 1) return;
         if (hold2xTimeout) clearTimeout(hold2xTimeout);
         hold2xTimeout = setTimeout(() => {
           if (!window.activeYTPlayer || !window.isYTPlayerReady) return;
@@ -2007,11 +2129,10 @@
       shield.addEventListener("pointerdown", startHoldCheck);
       shield.addEventListener("pointerup", endHoldCheck);
       shield.addEventListener("pointercancel", endHoldCheck);
-      shield.addEventListener(" pointerleave", endHoldCheck);
+      shield.addEventListener("pointerleave", endHoldCheck);
 
       // Single Tap vs Left/Right Double-Tap Detection
       shield.addEventListener("click", (e) => {
-        // Ignore click if it was a long-press 2x release
         showControlsBar();
 
         const rect = shield.getBoundingClientRect();
@@ -2021,7 +2142,6 @@
         const timeDiff = now - lastTapTime;
 
         if (timeDiff < 310 && timeDiff > 25) {
-          // Double-Tap Detected!
           if (singleTapTimeout) {
             clearTimeout(singleTapTimeout);
             singleTapTimeout = null;
@@ -2029,17 +2149,13 @@
           lastTapTime = now;
 
           if (pctX <= 0.35) {
-            // Left 0%-35%: Stackable Rewind 10s
             triggerStackableRewind();
           } else if (pctX >= 0.65) {
-            // Right 65%-100%: Stackable Forward 10s
             triggerStackableForward();
           } else {
-            // Center Double-Tap: Fullscreen Toggle
             toggleCustomFullscreen();
           }
         } else {
-          // Single Tap Candidate
           lastTapTime = now;
           if (singleTapTimeout) clearTimeout(singleTapTimeout);
           singleTapTimeout = setTimeout(() => {
@@ -2149,13 +2265,13 @@
         info: "border-indigo-500/40"
       };
       const toast = document.createElement("div");
-      toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-900/95 backdrop-blur-md border ${borderMap[type] || borderMap.info} shadow-2xl text-xs sm:text-sm font-medium text-white transition-all duration-300`;
-      toast.innerHTML = `<i class="fa-solid ${iconMap[type] || iconMap.info} text-base shrink-0"></i><span class="flex-1 leading-snug">${escapeHtml(message)}</span>`;
+      toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-2.5 rounded-xl bg-slate-900/95 backdrop-blur-md border ${borderMap[type] || borderMap.info} shadow-2xl text-xs font-medium text-white transition-all duration-300`;
+      toast.innerHTML = `<i class="fa-solid ${iconMap[type] || iconMap.info} text-sm shrink-0"></i><span class="flex-1 leading-snug">${escapeHtml(message)}</span>`;
       container.appendChild(toast);
       setTimeout(() => {
         toast.classList.add("opacity-0", "translate-x-4");
         setTimeout(() => toast.remove(), 300);
-      }, 2800);
+      }, 2600);
     }
 
     // ----------------------------------------------------------
@@ -2171,12 +2287,12 @@
       if (state.theme === "light") {
         htmlEl.classList.remove("dark");
         htmlEl.classList.add("light");
-        if (icon) icon.className = "fa-solid fa-moon text-indigo-600 text-sm";
+        if (icon) icon.className = "fa-solid fa-moon text-indigo-600 text-xs sm:text-sm";
         if (metaTheme) metaTheme.setAttribute("content", "#f8fafc");
       } else {
         htmlEl.classList.remove("light");
         htmlEl.classList.add("dark");
-        if (icon) icon.className = "fa-solid fa-sun text-amber-400 text-sm";
+        if (icon) icon.className = "fa-solid fa-sun text-amber-400 text-xs sm:text-sm";
         if (metaTheme) metaTheme.setAttribute("content", "#0b0f19");
       }
     }
@@ -2413,8 +2529,8 @@
       }
 
       document.getElementById("admin-lock-icon").className = state.isAdminUnlocked
-        ? "fa-solid fa-lock-open text-emerald-400"
-        : "fa-solid fa-lock text-amber-400";
+        ? "fa-solid fa-lock-open text-emerald-400 text-xs"
+        : "fa-solid fa-lock text-amber-400 text-xs";
 
       if (viewName === "home") {
         renderBatchesGrid();
@@ -2601,7 +2717,6 @@
       const subjects = getNormalizedSubjects(batch);
       const subjectList = Object.values(subjects).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 
-      // Show non-intrusive Resume prompt bar if batch has saved state and user didn't already click Resume
       const savedForBatch = state.batchResumeMap[batchId] || (state.studyResumeState?.batchId === batchId ? state.studyResumeState : null);
       const resumeBar = document.getElementById("classroom-resume-prompt");
       if (savedForBatch && savedForBatch.videoId && !autoPlayImmediate) {
@@ -2654,8 +2769,8 @@
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = isActive
-          ? `px-4 py-2 rounded-xl ${c.activeBg} text-white font-bold text-xs flex items-center gap-2 shadow-md shrink-0 transition`
-          : `px-4 py-2 rounded-xl swp-card hover:border-indigo-500/50 border swp-border swp-text font-semibold text-xs flex items-center gap-2 shrink-0 transition`;
+          ? `px-3.5 py-2 rounded-xl ${c.activeBg} text-white font-bold text-xs flex items-center gap-2 shadow-md shrink-0 transition`
+          : `px-3.5 py-2 rounded-xl swp-card hover:border-indigo-500/50 border swp-border swp-text font-semibold text-xs flex items-center gap-2 shrink-0 transition`;
         btn.innerHTML = `
           <i class="fa-solid ${escapeHtml(sub.icon)} ${isActive ? "text-white" : c.text}"></i>
           <div class="text-left">
@@ -2693,7 +2808,6 @@
         return;
       }
 
-      // If targetVideoId is given without targetContentId, find matching content module if possible
       if (!targetContentId && targetVideoId) {
         const matchContent = contentsList.find((c) => {
           if (c.ytId === targetVideoId) return true;
@@ -2819,7 +2933,6 @@
         return;
       }
 
-      // If cached IDs exist AND we want immediate resume playback, build list right away
       const cachedIds = state.playlistVideosCache[playlistId];
       if (Array.isArray(cachedIds) && cachedIds.length > 0) {
         buildPlaylistLectureList(playlistId, cachedIds, subject.name, content.title);
@@ -2832,7 +2945,6 @@
         }
       }
 
-      // Method 1: Optional YouTube Data API v3
       if (state.ytApiKey && state.ytApiKey.trim().length > 10) {
         try {
           const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${encodeURIComponent(playlistId)}&key=${encodeURIComponent(state.ytApiKey.trim())}`;
@@ -2864,7 +2976,6 @@
         } catch (e) {}
       }
 
-      // Method 2: Native Singleton cuePlaylist + oEmbed
       try {
         window.activeYTPlayer.cuePlaylist({ listType: "playlist", list: playlistId, index: 0 });
       } catch (e) {}
@@ -2932,6 +3043,7 @@
 
       state.activeLectureIndex = index;
       state.activeVideoId = lecture.ytVideoId;
+      currentVideoId = lecture.ytVideoId;
 
       const seekSec = startSeconds !== null
         ? Math.floor(startSeconds)
@@ -2942,21 +3054,23 @@
       renderStudyNotesList();
 
       whenSingletonPlayerReady((player) => {
+        const loadPayload = {
+          videoId: lecture.ytVideoId,
+          startSeconds: seekSec
+        };
+        if (currentQuality && currentQuality !== "default") {
+          loadPayload.suggestedQuality = currentQuality;
+        }
+
         if (autoPlay) {
           setBufferingSpinner(true, "Loading Lecture...");
-          player.loadVideoById({
-            videoId: lecture.ytVideoId,
-            startSeconds: seekSec
-          });
+          player.loadVideoById(loadPayload);
           if (seekSec > 5) {
             showToast(`Resumed "${lecture.title}" at ${formatTime(seekSec)}`, "info");
           }
         } else {
           setBufferingSpinner(false);
-          player.cueVideoById({
-            videoId: lecture.ytVideoId,
-            startSeconds: seekSec
-          });
+          player.cueVideoById(loadPayload);
           syncPlayPauseButtonIcon(window.YT ? window.YT.PlayerState.CUED : 5);
         }
       });
@@ -2992,7 +3106,7 @@
     }
 
     // ----------------------------------------------------------
-    // 14. RESPONSIVE SPEED & QUALITY OVERLAY MENUS
+    // 14. BUG 2 FIX: VIDEO QUALITY & SPEED OVERLAY MENUS
     // ----------------------------------------------------------
     function openPlayerSettingsMenu(type) {
       const modal = document.getElementById("player-menu-modal");
@@ -3020,40 +3134,64 @@
         });
       } else {
         title.textContent = "Select Video Quality";
-        const available = (window.activeYTPlayer && typeof window.activeYTPlayer.getAvailableQualityLevels === "function")
-          ? (window.activeYTPlayer.getAvailableQualityLevels() || [])
-          : [];
         const qualities = [
-          { q: "default", label: "Auto (Recommended)" },
-          { q: "hd1080", label: "1080p Full HD" },
-          { q: "hd720", label: "720p HD" },
-          { q: "large", label: "480p Standard" },
-          { q: "medium", label: "360p Data Saver" },
-          { q: "small", label: "240p Low" }
+          { q: "default", shortLabel: "Auto", label: "Auto (Recommended)" },
+          { q: "hd1080", shortLabel: "1080p", label: "1080p Full HD" },
+          { q: "hd720", shortLabel: "720p", label: "720p HD" },
+          { q: "large", shortLabel: "480p", label: "480p Standard" },
+          { q: "medium", shortLabel: "360p", label: "360p Data Saver" },
+          { q: "small", shortLabel: "240p", label: "240p Low" }
         ];
+
         qualities.forEach((item) => {
-          const isCurrent = state.activeQuality === item.q;
-          const isSupported = item.q === "default" || available.length === 0 || available.includes(item.q);
+          const isCurrent = currentQuality === item.q;
           const btn = document.createElement("button");
           btn.type = "button";
           btn.className = `py-2.5 px-3 rounded-xl font-bold flex items-center justify-between transition ${
             isCurrent ? "bg-purple-600 text-white" : "bg-slate-800/90 hover:bg-slate-700 text-slate-200"
-          } ${!isSupported ? "opacity-50" : ""}`;
+          }`;
           btn.innerHTML = `<span>${item.label}</span>${isCurrent ? '<i class="fa-solid fa-check text-[10px]"></i>' : ""}`;
+
+          // BUG 2 EXACT JS FIX: Reload with suggestedQuality while preserving time, rate, and play state
           btn.addEventListener("click", () => {
-            state.activeQuality = item.q;
+            const selectedQuality = item.q;
+            currentQuality = selectedQuality;
+            state.activeQuality = selectedQuality;
+
+            document.getElementById("quality-active-label").textContent = item.shortLabel;
+            modal.classList.add("hidden");
+
             if (window.activeYTPlayer && window.isYTPlayerReady) {
-              if (typeof window.activeYTPlayer.setPlaybackQuality === "function") {
-                window.activeYTPlayer.setPlaybackQuality(item.q);
-              }
-              if (typeof window.activeYTPlayer.setPlaybackQualityRange === "function" && item.q !== "default") {
-                try { window.activeYTPlayer.setPlaybackQualityRange(item.q, item.q); } catch (e) {}
+              const isPlaying = window.activeYTPlayer.getPlayerState() === window.YT.PlayerState.PLAYING;
+              const curTime = window.activeYTPlayer.getCurrentTime() || 0;
+              const curRate = window.activeYTPlayer.getPlaybackRate() || state.preferredSpeed || 1;
+              const vidId = state.activeVideoId || currentVideoId || window.activeYTPlayer.getVideoData()?.video_id;
+
+              try {
+                window.activeYTPlayer.setPlaybackQuality(selectedQuality);
+              } catch (e) {}
+
+              if (vidId) {
+                window.activeYTPlayer.loadVideoById({
+                  videoId: vidId,
+                  startSeconds: curTime,
+                  suggestedQuality: selectedQuality
+                });
+                setTimeout(() => {
+                  try {
+                    if (selectedQuality !== "default") {
+                      window.activeYTPlayer.setPlaybackQuality(selectedQuality);
+                    }
+                    window.activeYTPlayer.setPlaybackRate(curRate);
+                    if (!isPlaying) window.activeYTPlayer.pauseVideo();
+                  } catch (e) {}
+                }, 400);
               }
             }
-            document.getElementById("quality-active-label").textContent = item.q === "default" ? "Auto" : item.label.split(" ")[0];
-            modal.classList.add("hidden");
-            showToast(`Quality set to ${item.label.split(" ")[0]}`, "info");
+
+            showToast(`Video quality set to ${item.shortLabel}`, "info");
           });
+
           container.appendChild(btn);
         });
       }
@@ -3285,7 +3423,7 @@
       const ripple = document.getElementById("player-center-ripple");
       const icon = document.getElementById("player-center-ripple-icon");
       if (!ripple || !icon) return;
-      icon.className = `fa-solid ${iconClass} text-2xl`;
+      icon.className = `fa-solid ${iconClass} text-xl sm:text-2xl`;
       ripple.classList.remove("hidden", "ripple-animate");
       void ripple.offsetWidth;
       ripple.classList.add("ripple-animate");
@@ -3321,11 +3459,11 @@
         window.activeYTPlayer.unMute();
         const v = window.activeYTPlayer.getVolume() || 100;
         volSlider.value = String(v);
-        volIcon.className = "fa-solid fa-volume-high text-xs sm:text-sm";
+        volIcon.className = "fa-solid fa-volume-high";
       } else {
         window.activeYTPlayer.mute();
         volSlider.value = "0";
-        volIcon.className = "fa-solid fa-volume-xmark text-xs sm:text-sm text-red-400";
+        volIcon.className = "fa-solid fa-volume-xmark text-red-400";
       }
     }
 
@@ -3371,6 +3509,12 @@
           }
         }
       } catch (e) {}
+    }
+
+    function syncFullscreenIcon() {
+      const isFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+      const icon = document.getElementById("ctrl-fullscreen-icon");
+      if (icon) icon.className = isFs ? "fa-solid fa-compress" : "fa-solid fa-expand";
     }
 
     function showControlsBar() {
@@ -3672,7 +3816,6 @@
         switchView("home");
       });
       document.getElementById("theater-mode-btn").addEventListener("click", toggleTheaterMode);
-      document.getElementById("ctrl-pip-btn").addEventListener("click", toggleTheaterMode);
       document.getElementById("classroom-share-btn").addEventListener("click", () => {
         const url = `${window.location.origin}${window.location.pathname}?batch=${encodeURIComponent(state.activeBatchId || "")}`;
         navigator.clipboard?.writeText(url).then(() => showToast("Batch link copied!", "success"));
@@ -3695,7 +3838,11 @@
       document.getElementById("ctrl-rewind-btn").addEventListener("click", () => seekRelative(-10, true));
       document.getElementById("ctrl-forward-btn").addEventListener("click", () => seekRelative(10, true));
       document.getElementById("ctrl-mute-btn").addEventListener("click", toggleMutePlayer);
+      document.getElementById("ctrl-zoom-btn").addEventListener("click", () => toggleScreenZoomFill());
       document.getElementById("ctrl-fullscreen-btn").addEventListener("click", toggleCustomFullscreen);
+
+      document.addEventListener("fullscreenchange", syncFullscreenIcon);
+      document.addEventListener("webkitfullscreenchange", syncFullscreenIcon);
 
       document.getElementById("ctrl-speed-btn").addEventListener("click", (e) => {
         e.stopPropagation();
@@ -3773,7 +3920,7 @@
           window.activeYTPlayer.unMute();
           window.activeYTPlayer.setVolume(vol);
           document.getElementById("ctrl-volume-icon").className =
-            vol === 0 ? "fa-solid fa-volume-xmark text-xs sm:text-sm text-red-400" : "fa-solid fa-volume-high text-xs sm:text-sm";
+            vol === 0 ? "fa-solid fa-volume-xmark text-red-400" : "fa-solid fa-volume-high";
         }
       });
 
@@ -3841,7 +3988,12 @@
         else if (key === "arrowleft" || key === "j") { e.preventDefault(); seekRelative(-10, true); }
         else if (key === "m") { e.preventDefault(); toggleMutePlayer(); }
         else if (key === "f") { e.preventDefault(); toggleCustomFullscreen(); }
+        else if (key === "z") { e.preventDefault(); toggleScreenZoomFill(); }
         else if (key === "t") { e.preventDefault(); toggleTheaterMode(); }
+      });
+
+      document.addEventListener("click", () => {
+        pomoPopover.classList.add("hidden");
       });
 
       // Admin PIN & CRUD Forms
