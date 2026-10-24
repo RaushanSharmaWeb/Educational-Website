@@ -95,7 +95,7 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
     /* ==========================================================
-       BUG 1 FIX: FULLSCREEN BORDER, CORNERS & SCREEN FIT / ZOOM
+       CUSTOM VIDEO PLAYER, OVERSCAN CROP & FULLSCREEN ROUND ICONS
        ========================================================== */
     #player-wrapper {
       aspect-ratio: 16 / 9;
@@ -108,13 +108,14 @@
       width: 100%;
     }
 
-    /* Normal 16:9 frame — ZERO top/bottom cropping */
+    /* Vertical Overscan Trick to hide YouTube top title bar & bottom watermark */
     .yt-crop-frame {
       position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
+      top: -65px !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: calc(100% + 130px) !important;
+      pointer-events: none !important;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -124,11 +125,11 @@
       width: 100% !important;
       height: 100% !important;
       border: 0 !important;
-      pointer-events: none;
+      pointer-events: none !important;
       transition: transform 0.25s ease;
     }
 
-    /* Strict Fullscreen CSS rules */
+    /* Fullscreen Container ONLY (NO wildcard * border-radius reset!) */
     #player-wrapper:fullscreen,
     #player-wrapper:-webkit-full-screen {
       width: 100vw !important;
@@ -149,22 +150,21 @@
       overflow: hidden !important;
     }
 
-    #player-wrapper:fullscreen *,
-    #player-wrapper:-webkit-full-screen * {
-      border-radius: 0 !important;
-    }
-
-    #player-wrapper:fullscreen iframe,
-    #player-wrapper:-webkit-full-screen iframe {
+    #player-wrapper:fullscreen .yt-crop-frame,
+    #player-wrapper:-webkit-full-screen .yt-crop-frame {
+      top: -70px !important;
+      height: calc(100vh + 140px) !important;
       width: 100vw !important;
-      height: 100vh !important;
-      border: none !important;
-      transition: transform 0.25s ease;
     }
 
     /* Zoom-to-Fill Mode class for 20:9 mobile screens */
     #player-wrapper.zoom-fill iframe {
       transform: scale(1.22) !important;
+    }
+
+    /* Force circular elements to stay 100% round in both normal and fullscreen modes */
+    .force-circle {
+      border-radius: 9999px !important;
     }
 
     /* Sticky Mobile Video Container (< 768px) */
@@ -186,7 +186,7 @@
     #player-shield {
       position: absolute;
       inset: 0;
-      z-index: 10;
+      z-index: 14;
       background: transparent;
       cursor: pointer;
     }
@@ -217,7 +217,7 @@
     #custom-controls {
       z-index: 25;
       transition: opacity 0.25s ease, transform 0.25s ease;
-      background: linear-gradient(to top, rgba(2, 6, 23, 0.96) 0%, rgba(2, 6, 23, 0.84) 68%, transparent 100%);
+      background: linear-gradient(to top, rgba(2, 6, 23, 0.98) 0%, rgba(2, 6, 23, 0.86) 68%, transparent 100%);
     }
 
     #custom-controls.controls-hidden {
@@ -241,7 +241,7 @@
       width: 100%;
       height: 5px;
       background: rgba(255, 255, 255, 0.24);
-      border-radius: 999px;
+      border-radius: 999px !important;
       overflow: hidden;
       transition: height 0.15s ease;
     }
@@ -257,7 +257,7 @@
       height: 100%;
       width: 0%;
       background: rgba(255, 255, 255, 0.45);
-      border-radius: 999px;
+      border-radius: 999px !important;
       pointer-events: none;
     }
 
@@ -268,7 +268,7 @@
       height: 100%;
       width: 0%;
       background: linear-gradient(90deg, #6366f1, #a855f7);
-      border-radius: 999px;
+      border-radius: 999px !important;
       pointer-events: none;
     }
 
@@ -289,9 +289,9 @@
     #seek-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
+      width: 15px;
+      height: 15px;
+      border-radius: 9999px !important;
       background: #6366f1;
       border: 2px solid #ffffff;
       box-shadow: 0 0 8px rgba(99, 102, 241, 0.95);
@@ -304,9 +304,9 @@
     }
 
     #seek-slider::-moz-range-thumb {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
+      width: 15px;
+      height: 15px;
+      border-radius: 9999px !important;
       background: #6366f1;
       border: 2px solid #ffffff;
       box-shadow: 0 0 8px rgba(99, 102, 241, 0.95);
@@ -319,7 +319,7 @@
       appearance: none;
       background: rgba(255, 255, 255, 0.28);
       height: 5px;
-      border-radius: 999px;
+      border-radius: 999px !important;
       cursor: pointer;
       outline: none;
     }
@@ -329,7 +329,7 @@
       appearance: none;
       width: 13px;
       height: 13px;
-      border-radius: 50%;
+      border-radius: 9999px !important;
       background: #ffffff;
       cursor: pointer;
     }
@@ -347,1113 +347,1312 @@
 <body class="min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
 
   <!-- ==========================================================
-       BUG 4 FIX (PART A): COMPACT NON-OVERFLOWING MOBILE TOP NAVBAR
+       UPGRADE 1: FULL-SCREEN LOGIN & SIGN UP AUTH GUARD (#view-auth)
        ========================================================== -->
-  <header class="sticky top-0 z-40 swp-card/95 backdrop-blur-md border-b swp-border transition-colors w-full">
-    <div class="max-w-[1440px] mx-auto px-2 py-1.5 sm:px-6 sm:h-16 flex items-center justify-between gap-1 sm:gap-3 w-full overflow-hidden">
+  <section id="view-auth" class="min-h-screen w-full flex items-center justify-center p-4 swp-bg relative overflow-hidden">
+    <!-- Subtle Background Glows -->
+    <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-indigo-600/15 blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-purple-600/15 blur-3xl pointer-events-none"></div>
 
-      <!-- Brand Logo (Compact on <640px) -->
-      <div id="brand-logo-btn" class="flex items-center gap-1.5 sm:gap-2.5 cursor-pointer group shrink-0">
-        <div class="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-          <i class="fa-solid fa-graduation-cap text-white text-xs sm:text-lg"></i>
+    <div class="w-full max-w-md rounded-3xl swp-card border swp-border shadow-2xl p-6 sm:p-8 space-y-6 relative z-10">
+      <!-- Brand Header -->
+      <div class="text-center space-y-2">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mx-auto shadow-xl shadow-indigo-500/30">
+          <i class="fa-solid fa-graduation-cap text-white text-2xl"></i>
         </div>
-        <div>
-          <div class="flex items-center gap-1">
-            <span class="hidden sm:inline font-bold text-base sm:text-lg tracking-tight font-display swp-text">Study With Pro</span>
-            <span class="sm:hidden text-xs font-bold tracking-tight font-display swp-text">StudyPro</span>
-            <span class="hidden xl:inline-flex items-center px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 rounded-full">
-              Focus Portal
-            </span>
-          </div>
-          <p class="text-[10px] swp-text-sec hidden sm:block leading-none">Personal Distraction-Free Classroom</p>
-        </div>
+        <h1 class="text-2xl font-extrabold font-display swp-text tracking-tight">Study With Pro</h1>
+        <p class="text-xs swp-text-sec">Personal Distraction-Free Study Portal • Login to Continue</p>
       </div>
 
-      <!-- Desktop Live Search Bar -->
-      <div class="flex-1 max-w-md hidden md:block">
-        <div class="relative">
-          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 swp-text-muted text-xs"></i>
-          <input
-            id="global-search-input"
-            type="text"
-            placeholder="Search batches, subjects, or exams..."
-            class="w-full pl-9 pr-8 py-2 swp-input border swp-border rounded-xl text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition-all"
-          />
-          <button
-            id="clear-search-btn"
-            type="button"
-            class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 swp-text-muted hover:text-indigo-400 text-xs"
-            title="Clear Search"
-          >
-            <i class="fa-solid fa-xmark"></i>
+      <!-- Auth Mode Switcher Tabs -->
+      <div class="grid grid-cols-2 gap-1.5 p-1 rounded-2xl swp-input border swp-border text-xs font-bold">
+        <button
+          id="auth-tab-login"
+          type="button"
+          class="py-2.5 rounded-xl bg-indigo-600 text-white shadow transition"
+        >
+          Login
+        </button>
+        <button
+          id="auth-tab-signup"
+          type="button"
+          class="py-2.5 rounded-xl swp-text-sec hover:text-indigo-400 transition"
+        >
+          Sign Up
+        </button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="auth-login-form" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold swp-text-sec mb-1.5">Email or Username *</label>
+          <div class="relative">
+            <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 swp-text-muted text-xs"></i>
+            <input
+              id="login-username-input"
+              type="text"
+              required
+              placeholder="Enter your email or username"
+              class="w-full pl-9 pr-3.5 py-2.5 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold swp-text-sec mb-1.5">Password *</label>
+          <div class="relative">
+            <i class="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 swp-text-muted text-xs"></i>
+            <input
+              id="login-password-input"
+              type="password"
+              required
+              placeholder="••••••••"
+              class="w-full pl-9 pr-3.5 py-2.5 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-xs">
+          <label class="flex items-center gap-2 cursor-pointer swp-text-sec">
+            <input id="login-remember-check" type="checkbox" checked class="rounded accent-indigo-600" />
+            <span>Keep me logged in</span>
+          </label>
+          <button type="button" id="switch-to-signup-link" class="text-indigo-400 hover:underline font-semibold">
+            Create Account?
           </button>
         </div>
-      </div>
-
-      <!-- Built-In Compact Pomodoro Study Timer -->
-      <div class="relative flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg sm:rounded-xl swp-elevated border swp-border shrink-0 text-xs">
-        <button
-          id="pomodoro-config-btn"
-          type="button"
-          class="flex items-center gap-1 text-xs font-bold swp-text hover:text-indigo-400 transition"
-          title="Configure Study Timer"
-        >
-          <i class="fa-solid fa-brain text-indigo-400 text-[11px]"></i>
-          <span id="pomodoro-time-display" class="font-mono text-[11px] sm:text-sm tracking-tight">25:00</span>
-          <span id="pomodoro-mode-badge" class="hidden lg:inline-block text-[10px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-400 uppercase">Focus</span>
-        </button>
 
         <button
-          id="pomodoro-toggle-btn"
-          type="button"
-          class="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center text-[9px] sm:text-[10px] transition"
-          title="Start / Pause Timer"
+          type="submit"
+          id="login-submit-btn"
+          class="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/25 transition flex items-center justify-center gap-2"
         >
-          <i id="pomodoro-toggle-icon" class="fa-solid fa-play"></i>
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span>Login to Classroom</span>
         </button>
+      </form>
 
-        <button
-          id="pomodoro-reset-btn"
-          type="button"
-          class="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg hover:bg-gray-500/20 swp-text-sec flex items-center justify-center text-[9px] sm:text-[10px] transition"
-          title="Reset Timer"
-        >
-          <i class="fa-solid fa-rotate-left"></i>
-        </button>
-
-        <!-- Pomodoro Popover -->
-        <div
-          id="pomodoro-popover"
-          class="hidden fixed sm:absolute top-14 sm:top-12 right-2 sm:right-0 w-64 rounded-2xl swp-card border swp-border shadow-2xl p-4 z-50 space-y-3"
-        >
-          <div class="flex items-center justify-between border-b swp-border pb-2">
-            <span class="text-xs font-bold swp-text flex items-center gap-1.5">
-              <i class="fa-solid fa-stopwatch text-indigo-400"></i>
-              Pomodoro Timer
-            </span>
-            <span id="pomodoro-session-counter" class="text-[10px] font-semibold text-emerald-400">0 Sessions</span>
-          </div>
-
-          <div class="grid grid-cols-3 gap-1.5 text-xs font-semibold">
-            <button type="button" data-pomo-preset="25" data-pomo-type="Focus" class="pomo-preset-btn py-1.5 rounded-lg bg-indigo-600 text-white">25m Focus</button>
-            <button type="button" data-pomo-preset="50" data-pomo-type="Deep" class="pomo-preset-btn py-1.5 rounded-lg swp-elevated swp-text-sec hover:text-indigo-400">50m Deep</button>
-            <button type="button" data-pomo-preset="5" data-pomo-type="Break" class="pomo-preset-btn py-1.5 rounded-lg swp-elevated swp-text-sec hover:text-emerald-400">5m Break</button>
-          </div>
-
-          <div class="flex items-center gap-2 pt-1">
+      <!-- SIGN UP FORM -->
+      <form id="auth-signup-form" class="hidden space-y-3.5">
+        <div>
+          <label class="block text-xs font-semibold swp-text-sec mb-1">Full Name *</label>
+          <div class="relative">
+            <i class="fa-solid fa-id-card absolute left-3.5 top-1/2 -translate-y-1/2 swp-text-muted text-xs"></i>
             <input
-              id="pomo-custom-mins"
-              type="number"
-              min="1"
-              max="180"
-              placeholder="Custom mins"
-              class="w-full px-2.5 py-1.5 rounded-lg swp-input border swp-border text-xs"
+              id="signup-name-input"
+              type="text"
+              required
+              placeholder="e.g., Raushan Sharma"
+              class="w-full pl-9 pr-3.5 py-2.5 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500"
             />
-            <button
-              id="pomo-apply-custom-btn"
-              type="button"
-              class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shrink-0"
-            >
-              Set
-            </button>
           </div>
         </div>
-      </div>
 
-      <!-- Right Action Buttons (Compact 28px/32px on Mobile so 100vw never overflows) -->
-      <div class="flex items-center gap-1 sm:gap-2 shrink-0">
-        <!-- PWA Install App Button -->
-        <button
-          id="pwa-install-btn"
-          type="button"
-          class="h-7 sm:h-9 px-2 sm:px-3 rounded-lg sm:rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-sm"
-          title="Install Study With Pro App"
-        >
-          <i class="fa-solid fa-mobile-screen-button text-xs"></i>
-          <span class="hidden sm:inline">Install App</span>
-        </button>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold swp-text-sec mb-1">Email or Username *</label>
+            <input
+              id="signup-username-input"
+              type="text"
+              required
+              placeholder="raushan123"
+              class="w-full px-3.5 py-2.5 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500"
+            />
+          </div>
 
-        <!-- Theme Toggle Button -->
-        <button
-          id="theme-toggle-btn"
-          type="button"
-          class="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl swp-elevated border swp-border flex items-center justify-center swp-text hover:text-indigo-400 transition"
-          title="Toggle Light / Dark Theme"
-        >
-          <i id="theme-toggle-icon" class="fa-solid fa-sun text-amber-400 text-xs sm:text-sm"></i>
-        </button>
+          <div>
+            <label class="block text-xs font-semibold swp-text-sec mb-1">Target Exam *</label>
+            <select
+              id="signup-exam-input"
+              class="w-full px-3 py-2.5 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500"
+            >
+              <option value="JEE">JEE Main / Adv</option>
+              <option value="NEET">NEET UG</option>
+              <option value="Class 12">Class 12 Board</option>
+              <option value="Coding">Coding & CS</option>
+              <option value="General">Other Exam</option>
+            </select>
+          </div>
+        </div>
 
-        <!-- All Batches Button -->
-        <button
-          id="nav-home-btn"
-          type="button"
-          class="h-7 sm:h-9 px-2 sm:px-3 rounded-lg sm:rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow-sm"
-          title="All Batches"
-        >
-          <i class="fa-solid fa-layer-group text-xs"></i>
-          <span class="hidden lg:inline">Batches</span>
-        </button>
+        <div>
+          <label class="block text-xs font-semibold swp-text-sec mb-1">Create Password (Min 4 chars) *</label>
+          <div class="relative">
+            <i class="fa-solid fa-key absolute left-3.5 top-1/2 -translate-y-1/2 swp-text-muted text-xs"></i>
+            <input
+              id="signup-password-input"
+              type="password"
+              required
+              minlength="4"
+              placeholder="Create a strong password"
+              class="w-full pl-9 pr-3.5 py-2.5 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+        </div>
 
-        <!-- Admin Panel Button -->
         <button
-          id="nav-admin-btn"
-          type="button"
-          class="h-7 sm:h-9 px-2 sm:px-3 rounded-lg sm:rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 swp-elevated border swp-border swp-text"
-          title="Admin Panel"
+          type="submit"
+          id="signup-submit-btn"
+          class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/25 transition flex items-center justify-center gap-2"
         >
-          <i id="admin-lock-icon" class="fa-solid fa-lock text-amber-400 text-xs"></i>
-          <span class="hidden lg:inline">Admin</span>
+          <i class="fa-solid fa-user-plus"></i>
+          <span>Create Free Study Account</span>
         </button>
-      </div>
+      </form>
     </div>
-  </header>
+  </section>
 
   <!-- ==========================================================
-       MAIN APPLICATION CONTAINER
+       PROTECTED APPLICATION WRAPPER (HIDDEN UNTIL LOGGED IN)
        ========================================================== -->
-  <main class="flex-1 max-w-[1440px] w-full mx-auto px-0 sm:px-6 py-0 sm:py-6">
+  <div id="protected-app-shell" class="hidden min-h-screen flex flex-col">
 
-    <!-- ========================================================
-         VIEW 1: STUDENT HOME PANEL (BATCHES EXPLORER)
-         ======================================================== -->
-    <section id="view-home" class="px-3 sm:px-0 py-4 sm:py-0 space-y-5 sm:space-y-6">
+    <!-- COMPACT NON-OVERFLOWING MOBILE TOP NAVBAR -->
+    <header class="sticky top-0 z-40 swp-card/95 backdrop-blur-md border-b swp-border transition-colors w-full">
+      <div class="max-w-[1440px] mx-auto px-2 py-1.5 sm:px-6 sm:h-16 flex items-center justify-between gap-1 sm:gap-3 w-full overflow-hidden">
 
-      <!-- Hero Focus Banner -->
-      <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 border border-indigo-500/30 p-5 sm:p-8 shadow-xl text-white">
-        <div class="relative z-10 max-w-2xl space-y-2.5 sm:space-y-3">
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-semibold">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            <span>Personal Anti-Distraction Study Portal</span>
+        <!-- Brand Logo -->
+        <div id="brand-logo-btn" class="flex items-center gap-1.5 sm:gap-2.5 cursor-pointer group shrink-0">
+          <div class="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+            <i class="fa-solid fa-graduation-cap text-white text-xs sm:text-lg"></i>
           </div>
-          <h1 class="text-xl sm:text-4xl font-extrabold tracking-tight font-display">
-            Deep Focus. Structured Subjects. <span class="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Zero Distractions.</span>
-          </h1>
-          <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">
-            Organize your courses by Batch → Subject → Chapter Playlists & Live Sessions. Use touch gestures (double-tap 10s seek, hold for 2x speed, pinch to zoom), take timestamped notes, and track syllabus progress.
-          </p>
-        </div>
-        <div class="hidden lg:flex items-center justify-center absolute right-10 top-1/2 -translate-y-1/2 opacity-15 pointer-events-none">
-          <i class="fa-solid fa-book-open-reader text-[140px] text-indigo-300"></i>
-        </div>
-      </div>
-
-      <!-- Mobile Search Bar -->
-      <div class="block md:hidden">
-        <div class="relative">
-          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 swp-text-muted text-xs"></i>
-          <input
-            id="mobile-search-input"
-            type="text"
-            placeholder="Search batches, subjects, or exams..."
-            class="w-full pl-9 pr-4 py-2.5 swp-card border swp-border rounded-xl text-xs swp-text focus:outline-none focus:border-indigo-500"
-          />
-        </div>
-      </div>
-
-      <!-- Global Auto-Resume Banner (Bound to study_resume_state) -->
-      <div id="home-resume-banner" class="hidden rounded-2xl swp-card border border-indigo-500/40 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 shadow-md">
-        <div class="flex items-center gap-3 min-w-0 w-full sm:w-auto">
-          <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-indigo-600/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
-            <i class="fa-solid fa-clock-rotate-left text-base sm:text-lg"></i>
-          </div>
-          <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] uppercase tracking-wider font-bold text-indigo-400">Continue Where You Left Off</span>
-              <span id="home-resume-speed-badge" class="px-1.5 py-0.2 rounded bg-purple-500/15 text-purple-400 text-[10px] font-bold">1x</span>
+          <div>
+            <div class="flex items-center gap-1">
+              <span class="hidden sm:inline font-bold text-base sm:text-lg tracking-tight font-display swp-text">Study With Pro</span>
+              <span class="sm:hidden text-xs font-bold tracking-tight font-display swp-text">StudyPro</span>
             </div>
-            <h3 id="home-resume-title" class="text-sm sm:text-base font-bold swp-text truncate">Lecture Title</h3>
-            <p id="home-resume-meta" class="text-xs swp-text-sec truncate">Batch • Subject • Saved at 00:00</p>
+            <p class="text-[10px] swp-text-sec hidden sm:block leading-none">Personal Focus Portal</p>
           </div>
         </div>
-        <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
-          <button
-            id="home-resume-btn"
-            type="button"
-            class="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25"
-          >
-            <i class="fa-solid fa-play"></i>
-            <span>Resume Now</span>
-          </button>
-          <button
-            id="home-resume-dismiss"
-            type="button"
-            class="w-9 h-9 rounded-xl swp-elevated swp-text-sec hover:text-red-400 flex items-center justify-center text-sm"
-            title="Dismiss Banner"
-          >
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-      </div>
 
-      <!-- Category Filter Pills & Counter -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div id="category-pills-container" class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar"></div>
-        <div class="text-xs swp-text-sec font-medium shrink-0">
-          Showing <span id="batch-count-badge" class="text-indigo-400 font-bold">0</span> Batches
-        </div>
-      </div>
-
-      <!-- Loading Skeletons -->
-      <div id="batches-loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div class="rounded-2xl swp-card border swp-border overflow-hidden animate-pulse">
-          <div class="aspect-video bg-slate-800/60"></div>
-          <div class="p-5 space-y-3">
-            <div class="h-5 bg-slate-700/50 rounded w-3/4"></div>
-            <div class="h-3 bg-slate-700/50 rounded w-full"></div>
-            <div class="pt-3 flex gap-3">
-              <div class="h-10 bg-slate-700/50 rounded-xl flex-1"></div>
-              <div class="h-10 w-10 bg-slate-700/50 rounded-xl"></div>
-            </div>
-          </div>
-        </div>
-        <div class="rounded-2xl swp-card border swp-border overflow-hidden animate-pulse hidden md:block">
-          <div class="aspect-video bg-slate-800/60"></div>
-          <div class="p-5 space-y-3">
-            <div class="h-5 bg-slate-700/50 rounded w-3/4"></div>
-            <div class="h-3 bg-slate-700/50 rounded w-full"></div>
-            <div class="pt-3 flex gap-3">
-              <div class="h-10 bg-slate-700/50 rounded-xl flex-1"></div>
-              <div class="h-10 w-10 bg-slate-700/50 rounded-xl"></div>
-            </div>
-          </div>
-        </div>
-        <div class="rounded-2xl swp-card border swp-border overflow-hidden animate-pulse hidden lg:block">
-          <div class="aspect-video bg-slate-800/60"></div>
-          <div class="p-5 space-y-3">
-            <div class="h-5 bg-slate-700/50 rounded w-3/4"></div>
-            <div class="h-3 bg-slate-700/50 rounded w-full"></div>
-            <div class="pt-3 flex gap-3">
-              <div class="h-10 bg-slate-700/50 rounded-xl flex-1"></div>
-              <div class="h-10 w-10 bg-slate-700/50 rounded-xl"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Empty State -->
-      <div id="batches-empty" class="hidden rounded-2xl swp-card border swp-border p-10 text-center max-w-lg mx-auto my-6 space-y-4">
-        <div class="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center mx-auto text-indigo-400">
-          <i class="fa-solid fa-folder-open text-2xl"></i>
-        </div>
-        <h3 class="text-lg font-bold swp-text">No Study Batches Found</h3>
-        <p class="text-xs sm:text-sm swp-text-sec">
-          No batches match your search filter, or your database is empty. Open the Admin Panel to create a Batch, add Subjects, and attach Playlists.
-        </p>
-        <div class="flex items-center justify-center gap-3 pt-2">
-          <button id="empty-reset-filter-btn" type="button" class="px-4 py-2 rounded-xl swp-elevated swp-text text-xs font-semibold">Reset Filters</button>
-          <button id="empty-open-admin-btn" type="button" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white">
-            <i class="fa-solid fa-plus mr-1.5"></i>Open Admin Panel
-          </button>
-        </div>
-      </div>
-
-      <!-- Responsive Batch Cards Grid -->
-      <div id="batches-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-    </section>
-
-    <!-- ========================================================
-         VIEW 2: CLASSROOM VIEW (STICKY MOBILE PLAYER + 2-ROW CONTROLS)
-         ======================================================== -->
-    <section id="view-classroom" class="hidden space-y-3 sm:space-y-4">
-
-      <!-- Top Classroom Navigation & Subject Tabs Bar -->
-      <div class="px-3 sm:px-0 pt-2.5 sm:pt-0 space-y-2.5">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-2 min-w-0">
+        <!-- Desktop Live Search Bar -->
+        <div class="flex-1 max-w-sm hidden md:block">
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 swp-text-muted text-xs"></i>
+            <input
+              id="global-search-input"
+              type="text"
+              placeholder="Search batches, subjects, or exams..."
+              class="w-full pl-9 pr-8 py-2 swp-input border swp-border rounded-xl text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition-all"
+            />
             <button
-              id="back-to-batches-btn"
+              id="clear-search-btn"
               type="button"
-              class="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl swp-card hover:border-indigo-500/50 border swp-border swp-text text-xs font-semibold flex items-center gap-1.5 transition shrink-0"
+              class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 swp-text-muted hover:text-indigo-400 text-xs"
+              title="Clear Search"
             >
-              <i class="fa-solid fa-arrow-left text-indigo-400"></i>
-              <span>Batches</span>
+              <i class="fa-solid fa-xmark"></i>
             </button>
-            <div class="min-w-0">
+          </div>
+        </div>
+
+        <!-- Built-In Compact Pomodoro Study Timer -->
+        <div class="relative flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg sm:rounded-xl swp-elevated border swp-border shrink-0 text-xs">
+          <button
+            id="pomodoro-config-btn"
+            type="button"
+            class="flex items-center gap-1 text-xs font-bold swp-text hover:text-indigo-400 transition"
+            title="Configure Study Timer"
+          >
+            <i class="fa-solid fa-brain text-indigo-400 text-[11px]"></i>
+            <span id="pomodoro-time-display" class="font-mono text-[11px] sm:text-sm tracking-tight">25:00</span>
+            <span id="pomodoro-mode-badge" class="hidden xl:inline-block text-[10px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-400 uppercase">Focus</span>
+          </button>
+
+          <button
+            id="pomodoro-toggle-btn"
+            type="button"
+            class="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center text-[9px] sm:text-[10px] transition"
+            title="Start / Pause Timer"
+          >
+            <i id="pomodoro-toggle-icon" class="fa-solid fa-play"></i>
+          </button>
+
+          <button
+            id="pomodoro-reset-btn"
+            type="button"
+            class="w-5 h-5 sm:w-6 sm:h-6 rounded-md sm:rounded-lg hover:bg-gray-500/20 swp-text-sec flex items-center justify-center text-[9px] sm:text-[10px] transition"
+            title="Reset Timer"
+          >
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+
+          <!-- Pomodoro Popover -->
+          <div
+            id="pomodoro-popover"
+            class="hidden fixed sm:absolute top-14 sm:top-12 right-2 sm:right-0 w-64 rounded-2xl swp-card border swp-border shadow-2xl p-4 z-50 space-y-3"
+          >
+            <div class="flex items-center justify-between border-b swp-border pb-2">
+              <span class="text-xs font-bold swp-text flex items-center gap-1.5">
+                <i class="fa-solid fa-stopwatch text-indigo-400"></i>
+                Pomodoro Timer
+              </span>
+              <span id="pomodoro-session-counter" class="text-[10px] font-semibold text-emerald-400">0 Sessions</span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-1.5 text-xs font-semibold">
+              <button type="button" data-pomo-preset="25" data-pomo-type="Focus" class="pomo-preset-btn py-1.5 rounded-lg bg-indigo-600 text-white">25m Focus</button>
+              <button type="button" data-pomo-preset="50" data-pomo-type="Deep" class="pomo-preset-btn py-1.5 rounded-lg swp-elevated swp-text-sec hover:text-indigo-400">50m Deep</button>
+              <button type="button" data-pomo-preset="5" data-pomo-type="Break" class="pomo-preset-btn py-1.5 rounded-lg swp-elevated swp-text-sec hover:text-emerald-400">5m Break</button>
+            </div>
+
+            <div class="flex items-center gap-2 pt-1">
+              <input
+                id="pomo-custom-mins"
+                type="number"
+                min="1"
+                max="180"
+                placeholder="Custom mins"
+                class="w-full px-2.5 py-1.5 rounded-lg swp-input border swp-border text-xs"
+              />
+              <button
+                id="pomo-apply-custom-btn"
+                type="button"
+                class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shrink-0"
+              >
+                Set
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Action Buttons -->
+        <div class="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          <!-- PWA Install App Button -->
+          <button
+            id="pwa-install-btn"
+            type="button"
+            class="h-7 sm:h-9 px-2 sm:px-2.5 rounded-lg sm:rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-sm"
+            title="Install Study With Pro App"
+          >
+            <i class="fa-solid fa-mobile-screen-button text-xs"></i>
+            <span class="hidden xl:inline">Install</span>
+          </button>
+
+          <!-- Theme Toggle Button -->
+          <button
+            id="theme-toggle-btn"
+            type="button"
+            class="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl swp-elevated border swp-border flex items-center justify-center swp-text hover:text-indigo-400 transition"
+            title="Toggle Light / Dark Theme"
+          >
+            <i id="theme-toggle-icon" class="fa-solid fa-sun text-amber-400 text-xs sm:text-sm"></i>
+          </button>
+
+          <!-- All Batches Button -->
+          <button
+            id="nav-home-btn"
+            type="button"
+            class="h-7 sm:h-9 px-2 sm:px-3 rounded-lg sm:rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow-sm"
+            title="All Batches"
+          >
+            <i class="fa-solid fa-layer-group text-xs"></i>
+            <span class="hidden lg:inline">Batches</span>
+          </button>
+
+          <!-- Admin Panel Button -->
+          <button
+            id="nav-admin-btn"
+            type="button"
+            class="h-7 sm:h-9 px-2 sm:px-3 rounded-lg sm:rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 swp-elevated border swp-border swp-text"
+            title="Admin Panel"
+          >
+            <i id="admin-lock-icon" class="fa-solid fa-lock text-amber-400 text-xs"></i>
+            <span class="hidden lg:inline">Admin</span>
+          </button>
+
+          <!-- Logged-in Student Profile Pill & Logout Button -->
+          <div class="flex items-center gap-1 pl-1 border-l swp-border">
+            <span id="nav-user-badge" class="hidden md:inline-block px-2 py-1 rounded-lg swp-elevated text-[11px] font-bold swp-text truncate max-w-[100px]">
+              Student
+            </span>
+            <button
+              id="user-logout-btn"
+              type="button"
+              class="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-red-500/15 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 flex items-center justify-center transition"
+              title="Logout Account"
+            >
+              <i class="fa-solid fa-power-off text-xs"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN APPLICATION CONTAINER -->
+    <main class="flex-1 max-w-[1440px] w-full mx-auto px-0 sm:px-6 py-0 sm:py-6">
+
+      <!-- ========================================================
+           VIEW 1: STUDENT HOME PANEL (BATCHES EXPLORER)
+           ======================================================== -->
+      <section id="view-home" class="px-3 sm:px-0 py-4 sm:py-0 space-y-5 sm:space-y-6">
+
+        <!-- Hero Focus Banner -->
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 border border-indigo-500/30 p-5 sm:p-8 shadow-xl text-white">
+          <div class="relative z-10 max-w-2xl space-y-2.5 sm:space-y-3">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-semibold">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <span id="welcome-user-greeting">Welcome back, Scholar!</span>
+            </div>
+            <h1 class="text-xl sm:text-4xl font-extrabold tracking-tight font-display">
+              Deep Focus. Structured Subjects. <span class="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Zero Distractions.</span>
+            </h1>
+            <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">
+              Organize your courses by Batch → Subject → Chapter Playlists & Live Sessions. Use touch gestures (double-tap 10s seek, hold for 2x speed, pinch to zoom), take timestamped notes, and track syllabus progress.
+            </p>
+          </div>
+          <div class="hidden lg:flex items-center justify-center absolute right-10 top-1/2 -translate-y-1/2 opacity-15 pointer-events-none">
+            <i class="fa-solid fa-book-open-reader text-[140px] text-indigo-300"></i>
+          </div>
+        </div>
+
+        <!-- Mobile Search Bar -->
+        <div class="block md:hidden">
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 swp-text-muted text-xs"></i>
+            <input
+              id="mobile-search-input"
+              type="text"
+              placeholder="Search batches, subjects, or exams..."
+              class="w-full pl-9 pr-4 py-2.5 swp-card border swp-border rounded-xl text-xs swp-text focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+        </div>
+
+        <!-- Global Auto-Resume Banner -->
+        <div id="home-resume-banner" class="hidden rounded-2xl swp-card border border-indigo-500/40 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 shadow-md">
+          <div class="flex items-center gap-3 min-w-0 w-full sm:w-auto">
+            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-indigo-600/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+              <i class="fa-solid fa-clock-rotate-left text-base sm:text-lg"></i>
+            </div>
+            <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2">
-                <h2 id="classroom-batch-name" class="text-sm sm:text-lg font-bold swp-text truncate font-display">Batch Name</h2>
-                <span id="classroom-batch-exam" class="px-2 py-0.5 text-[10px] font-bold rounded bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 shrink-0">Exam</span>
+                <span class="text-[10px] uppercase tracking-wider font-bold text-indigo-400">Continue Where You Left Off</span>
+                <span id="home-resume-speed-badge" class="px-1.5 py-0.2 rounded bg-purple-500/15 text-purple-400 text-[10px] font-bold">1x</span>
               </div>
-              <div class="flex items-center gap-2 text-[11px] swp-text-sec">
-                <span>Progress: <strong id="classroom-batch-progress-text" class="text-emerald-400">0%</strong></span>
-                <span class="hidden md:inline">• Double-tap sides: ±10s | Hold: 2x Speed | Pinch: Zoom Fit</span>
-              </div>
+              <h3 id="home-resume-title" class="text-sm sm:text-base font-bold swp-text truncate">Lecture Title</h3>
+              <p id="home-resume-meta" class="text-xs swp-text-sec truncate">Batch • Subject • Saved at 00:00</p>
             </div>
           </div>
-
-          <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
             <button
-              id="theater-mode-btn"
+              id="home-resume-btn"
               type="button"
-              class="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl swp-card border swp-border text-xs font-semibold swp-text hover:border-indigo-500 transition"
-              title="Toggle Theater / Focus Mode (T)"
+              class="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/25"
             >
-              <i class="fa-solid fa-panorama text-indigo-400"></i>
-              <span id="theater-mode-label">Theater Mode</span>
+              <i class="fa-solid fa-play"></i>
+              <span>Resume Now</span>
             </button>
-
             <button
-              id="classroom-share-btn"
+              id="home-resume-dismiss"
               type="button"
-              class="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl swp-card border swp-border text-xs font-semibold swp-text hover:border-indigo-500 flex items-center gap-1.5 transition"
+              class="w-9 h-9 rounded-xl swp-elevated swp-text-sec hover:text-red-400 flex items-center justify-center text-sm"
+              title="Dismiss Banner"
             >
-              <i class="fa-solid fa-share-nodes text-indigo-400"></i>
-              <span class="hidden sm:inline">Share</span>
+              <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
         </div>
 
-        <!-- Subject Selector Tabs -->
-        <div id="classroom-subjects-bar" class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar"></div>
-      </div>
+        <!-- Category Filter Pills & Counter -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div id="category-pills-container" class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar"></div>
+          <div class="text-xs swp-text-sec font-medium shrink-0">
+            Showing <span id="batch-count-badge" class="text-indigo-400 font-bold">0</span> Batches
+          </div>
+        </div>
 
-      <!-- MAIN CLASSROOM SPLIT-SCREEN CONTAINER -->
-      <div id="classroom-split-container" class="flex flex-col lg:flex-row gap-5 items-start">
-
-        <!-- LEFT COLUMN: Sticky Video Player on Mobile + Lecture Info + Notes -->
-        <div id="classroom-left-col" class="w-full lg:w-[68%] space-y-4">
-
-          <!-- Sticky Mobile Wrapper (< 768px stays pinned at top: 0, z-index: 50) -->
-          <div id="mobile-sticky-player-box" class="swp-bg">
-            <div id="player-wrapper" class="rounded-none sm:rounded-2xl border swp-border shadow-2xl">
-
-              <!-- Normal 16:9 YouTube Iframe Container (Singleton Mount Point) -->
-              <div class="yt-crop-frame">
-                <div id="yt-player"></div>
+        <!-- Loading Skeletons -->
+        <div id="batches-loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="rounded-2xl swp-card border swp-border overflow-hidden animate-pulse">
+            <div class="aspect-video bg-slate-800/60"></div>
+            <div class="p-5 space-y-3">
+              <div class="h-5 bg-slate-700/50 rounded w-3/4"></div>
+              <div class="h-3 bg-slate-700/50 rounded w-full"></div>
+              <div class="pt-3 flex gap-3">
+                <div class="h-10 bg-slate-700/50 rounded-xl flex-1"></div>
+                <div class="h-10 w-10 bg-slate-700/50 rounded-xl"></div>
               </div>
-
-              <!-- Interactive Gesture Shield Over Iframe -->
-              <div id="player-shield"></div>
-
-              <!-- Press & Hold 2x Speed Boost Badge (Top-Center) -->
-              <div
-                id="speed-2x-badge"
-                class="hidden absolute top-3 left-1/2 -translate-x-1/2 z-30 px-3 py-1 rounded-full bg-black/85 backdrop-blur-md border border-amber-400/50 text-amber-300 text-[11px] font-bold flex items-center gap-1.5 pointer-events-none shadow-2xl"
-              >
-                <i class="fa-solid fa-bolt animate-bounce"></i>
-                <span>Playing at 2x speed</span>
+            </div>
+          </div>
+          <div class="rounded-2xl swp-card border swp-border overflow-hidden animate-pulse hidden md:block">
+            <div class="aspect-video bg-slate-800/60"></div>
+            <div class="p-5 space-y-3">
+              <div class="h-5 bg-slate-700/50 rounded w-3/4"></div>
+              <div class="h-3 bg-slate-700/50 rounded w-full"></div>
+              <div class="pt-3 flex gap-3">
+                <div class="h-10 bg-slate-700/50 rounded-xl flex-1"></div>
+                <div class="h-10 w-10 bg-slate-700/50 rounded-xl"></div>
               </div>
-
-              <!-- Screen Fit / Zoom Mode Feedback Badge (Top-Center) -->
-              <div
-                id="zoom-mode-badge"
-                class="hidden absolute top-3 left-1/2 -translate-x-1/2 z-30 px-3 py-1 rounded-full bg-black/85 backdrop-blur-md border border-indigo-400/50 text-indigo-300 text-[11px] font-bold flex items-center gap-1.5 pointer-events-none shadow-2xl"
-              >
-                <i class="fa-solid fa-expand-arrows-alt"></i>
-                <span id="zoom-mode-badge-text">Screen: Zoomed to Fill</span>
+            </div>
+          </div>
+          <div class="rounded-2xl swp-card border swp-border overflow-hidden animate-pulse hidden lg:block">
+            <div class="aspect-video bg-slate-800/60"></div>
+            <div class="p-5 space-y-3">
+              <div class="h-5 bg-slate-700/50 rounded w-3/4"></div>
+              <div class="h-3 bg-slate-700/50 rounded w-full"></div>
+              <div class="pt-3 flex gap-3">
+                <div class="h-10 bg-slate-700/50 rounded-xl flex-1"></div>
+                <div class="h-10 w-10 bg-slate-700/50 rounded-xl"></div>
               </div>
+            </div>
+          </div>
+        </div>
 
-              <!-- Double-Tap Left Zone Rewind Ripple (0% - 35% width) -->
-              <div
-                id="gesture-ripple-left"
-                class="hidden absolute inset-y-0 left-0 w-[35%] z-20 bg-white/15 backdrop-blur-[2px] rounded-r-full flex flex-col items-center justify-center text-white pointer-events-none"
+        <!-- Empty State -->
+        <div id="batches-empty" class="hidden rounded-2xl swp-card border swp-border p-10 text-center max-w-lg mx-auto my-6 space-y-4">
+          <div class="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center mx-auto text-indigo-400">
+            <i class="fa-solid fa-folder-open text-2xl"></i>
+          </div>
+          <h3 class="text-lg font-bold swp-text">No Study Batches Found</h3>
+          <p class="text-xs sm:text-sm swp-text-sec">
+            No batches match your search filter, or your database is empty. Open the Admin Panel to create a Batch, add Subjects, and attach Playlists.
+          </p>
+          <div class="flex items-center justify-center gap-3 pt-2">
+            <button id="empty-reset-filter-btn" type="button" class="px-4 py-2 rounded-xl swp-elevated swp-text text-xs font-semibold">Reset Filters</button>
+            <button id="empty-open-admin-btn" type="button" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white">
+              <i class="fa-solid fa-plus mr-1.5"></i>Open Admin Panel
+            </button>
+          </div>
+        </div>
+
+        <!-- Responsive Batch Cards Grid -->
+        <div id="batches-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+      </section>
+
+      <!-- ========================================================
+           VIEW 2: CLASSROOM VIEW (100% HIDDEN YT UI + ROUND ICONS)
+           ======================================================== -->
+      <section id="view-classroom" class="hidden space-y-3 sm:space-y-4">
+
+        <!-- Top Classroom Navigation & Subject Tabs Bar -->
+        <div class="px-3 sm:px-0 pt-2.5 sm:pt-0 space-y-2.5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <button
+                id="back-to-batches-btn"
+                type="button"
+                class="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl swp-card hover:border-indigo-500/50 border swp-border swp-text text-xs font-semibold flex items-center gap-1.5 transition shrink-0"
               >
-                <div class="w-11 h-11 rounded-full bg-black/50 flex items-center justify-center mb-1">
-                  <i class="fa-solid fa-angles-left text-lg"></i>
+                <i class="fa-solid fa-arrow-left text-indigo-400"></i>
+                <span>Batches</span>
+              </button>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <h2 id="classroom-batch-name" class="text-sm sm:text-lg font-bold swp-text truncate font-display">Batch Name</h2>
+                  <span id="classroom-batch-exam" class="px-2 py-0.5 text-[10px] font-bold rounded bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 shrink-0">Exam</span>
                 </div>
-                <span id="gesture-left-text" class="text-xs font-extrabold tracking-wide">⏪ 10s</span>
-              </div>
-
-              <!-- Double-Tap Right Zone Forward Ripple (65% - 100% width) -->
-              <div
-                id="gesture-ripple-right"
-                class="hidden absolute inset-y-0 right-0 w-[35%] z-20 bg-white/15 backdrop-blur-[2px] rounded-l-full flex flex-col items-center justify-center text-white pointer-events-none"
-              >
-                <div class="w-11 h-11 rounded-full bg-black/50 flex items-center justify-center mb-1">
-                  <i class="fa-solid fa-angles-right text-lg"></i>
+                <div class="flex items-center gap-2 text-[11px] swp-text-sec">
+                  <span>Progress: <strong id="classroom-batch-progress-text" class="text-emerald-400">0%</strong></span>
+                  <span class="hidden md:inline">• Double-tap sides: ±10s | Hold: 2x Speed | Pinch: Zoom Fit</span>
                 </div>
-                <span id="gesture-right-text" class="text-xs font-extrabold tracking-wide">10s ⏩</span>
               </div>
+            </div>
 
-              <!-- Center Play/Pause Ripple Feedback -->
-              <div
-                id="player-center-ripple"
-                class="hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-indigo-600/85 backdrop-blur-md text-white flex items-center justify-center pointer-events-none shadow-2xl"
+            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              <button
+                id="theater-mode-btn"
+                type="button"
+                class="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl swp-card border swp-border text-xs font-semibold swp-text hover:border-indigo-500 transition"
+                title="Toggle Theater / Focus Mode (T)"
               >
-                <i id="player-center-ripple-icon" class="fa-solid fa-play text-xl sm:text-2xl"></i>
-              </div>
+                <i class="fa-solid fa-panorama text-indigo-400"></i>
+                <span id="theater-mode-label">Theater Mode</span>
+              </button>
 
-              <!-- SINGLE Custom Loading / Buffering Spinner Overlay -->
-              <div
-                id="player-loading-overlay"
-                class="hidden absolute inset-0 z-20 bg-black/60 backdrop-blur-[1px] flex flex-col items-center justify-center gap-2 pointer-events-none"
+              <button
+                id="classroom-share-btn"
+                type="button"
+                class="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl swp-card border swp-border text-xs font-semibold swp-text hover:border-indigo-500 flex items-center gap-1.5 transition"
               >
-                <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                <span id="player-loading-text" class="text-xs font-semibold text-slate-200">Buffering Stream...</span>
-              </div>
+                <i class="fa-solid fa-share-nodes text-indigo-400"></i>
+                <span class="hidden sm:inline">Share</span>
+              </button>
+            </div>
+          </div>
 
-              <!-- Responsive Speed & Quality Overlay Modal (Inside Player Wrapper for Fullscreen Support) -->
-              <div
-                id="player-menu-modal"
-                class="hidden absolute inset-0 z-30 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-2.5 sm:p-6"
-              >
-                <div class="w-full max-w-xs rounded-2xl bg-slate-900/95 border border-slate-700 p-3.5 sm:p-4 text-white shadow-2xl space-y-2.5 max-h-[90%] overflow-y-auto">
-                  <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-                    <span id="player-menu-title" class="text-xs font-bold uppercase tracking-wider text-indigo-400">Playback Settings</span>
-                    <button id="close-player-menu-btn" type="button" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-xs">
-                      <i class="fa-solid fa-xmark"></i>
-                    </button>
+          <!-- Subject Selector Tabs -->
+          <div id="classroom-subjects-bar" class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar"></div>
+        </div>
+
+        <!-- MAIN CLASSROOM SPLIT-SCREEN CONTAINER -->
+        <div id="classroom-split-container" class="flex flex-col lg:flex-row gap-5 items-start">
+
+          <!-- LEFT COLUMN: Sticky Video Player on Mobile + Lecture Info + Notes -->
+          <div id="classroom-left-col" class="w-full lg:w-[68%] space-y-4">
+
+            <!-- Sticky Mobile Wrapper (< 768px stays pinned at top: 0, z-index: 50) -->
+            <div id="mobile-sticky-player-box" class="swp-bg">
+              <div id="player-wrapper" class="rounded-none sm:rounded-2xl border swp-border shadow-2xl">
+
+                <!-- Vertical Overscan Cropped YouTube Iframe Container (Hides YT Title & Bottom Logos) -->
+                <div class="yt-crop-frame">
+                  <div id="yt-player"></div>
+                </div>
+
+                <!-- UPGRADE 3 (PART A): Pause Mode Anti-Watermark Mask (Hides "More videos" & "Watch on YouTube") -->
+                <div id="player-pause-mask" class="hidden absolute inset-0 z-12 pointer-events-none flex flex-col justify-between">
+                  <div class="w-full h-14 bg-gradient-to-b from-black via-black/80 to-transparent"></div>
+                  <div class="w-full h-24 bg-gradient-to-t from-black via-black/95 to-transparent"></div>
+                </div>
+
+                <!-- UPGRADE 3 (PART B): Custom Poster & Round Indigo Play Button (Hides YT Red Play Button before start) -->
+                <div id="player-poster-overlay" class="absolute inset-0 z-16 bg-slate-950 flex flex-col items-center justify-center cursor-pointer select-none overflow-hidden">
+                  <img
+                    id="player-poster-img"
+                    src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80"
+                    alt="Lecture Poster"
+                    class="absolute inset-0 w-full h-full object-cover opacity-55 scale-105 blur-[1px] transition-transform duration-500"
+                  />
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/70"></div>
+
+                  <button
+                    id="custom-big-play-btn"
+                    type="button"
+                    class="force-circle relative z-10 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white flex items-center justify-center shadow-2xl shadow-indigo-600/50 border-2 border-white/80 transform hover:scale-110 transition-all"
+                    title="Start Lecture"
+                  >
+                    <i class="fa-solid fa-play text-xl sm:text-2xl ml-1"></i>
+                  </button>
+                  <span id="player-poster-title" class="relative z-10 mt-3 px-4 text-xs sm:text-sm font-bold text-white text-center line-clamp-1 max-w-lg drop-shadow">
+                    Tap to Start Distraction-Free Lecture
+                  </span>
+                </div>
+
+                <!-- Interactive Gesture Shield Over Iframe -->
+                <div id="player-shield"></div>
+
+                <!-- Press & Hold 2x Speed Boost Badge (Top-Center) -->
+                <div
+                  id="speed-2x-badge"
+                  class="force-circle hidden absolute top-3 left-1/2 -translate-x-1/2 z-30 px-3.5 py-1 bg-black/85 backdrop-blur-md border border-amber-400/50 text-amber-300 text-[11px] font-bold flex items-center gap-1.5 pointer-events-none shadow-2xl"
+                >
+                  <i class="fa-solid fa-bolt animate-bounce"></i>
+                  <span>Playing at 2x speed</span>
+                </div>
+
+                <!-- Screen Fit / Zoom Mode Feedback Badge (Top-Center) -->
+                <div
+                  id="zoom-mode-badge"
+                  class="force-circle hidden absolute top-3 left-1/2 -translate-x-1/2 z-30 px-3.5 py-1 bg-black/85 backdrop-blur-md border border-indigo-400/50 text-indigo-300 text-[11px] font-bold flex items-center gap-1.5 pointer-events-none shadow-2xl"
+                >
+                  <i class="fa-solid fa-expand-arrows-alt"></i>
+                  <span id="zoom-mode-badge-text">Screen: Zoomed to Fill</span>
+                </div>
+
+                <!-- Double-Tap Left Zone Rewind Ripple (0% - 35% width) -->
+                <div
+                  id="gesture-ripple-left"
+                  class="hidden absolute inset-y-0 left-0 w-[35%] z-20 bg-white/15 backdrop-blur-[2px] rounded-r-full flex flex-col items-center justify-center text-white pointer-events-none"
+                >
+                  <div class="force-circle w-11 h-11 bg-black/60 flex items-center justify-center mb-1">
+                    <i class="fa-solid fa-angles-left text-lg"></i>
                   </div>
-                  <div id="player-menu-options" class="grid grid-cols-2 gap-1.5 text-xs"></div>
+                  <span id="gesture-left-text" class="text-xs font-extrabold tracking-wide">⏪ 10s</span>
                 </div>
-              </div>
 
-              <!-- ====================================================
-                   BUG 4 FIX (PART B): 2-ROW MOBILE CONTROL BAR LAYOUT
-                   ==================================================== -->
-              <div id="custom-controls" class="absolute bottom-0 inset-x-0 px-2 sm:px-4 pt-5 pb-1.5 sm:pb-2.5 flex flex-col gap-1 select-none">
+                <!-- Double-Tap Right Zone Forward Ripple (65% - 100% width) -->
+                <div
+                  id="gesture-ripple-right"
+                  class="hidden absolute inset-y-0 right-0 w-[35%] z-20 bg-white/15 backdrop-blur-[2px] rounded-l-full flex flex-col items-center justify-center text-white pointer-events-none"
+                >
+                  <div class="force-circle w-11 h-11 bg-black/60 flex items-center justify-center mb-1">
+                    <i class="fa-solid fa-angles-right text-lg"></i>
+                  </div>
+                  <span id="gesture-right-text" class="text-xs font-extrabold tracking-wide">10s ⏩</span>
+                </div>
 
-                <!-- TOP ROW: Timestamp Strip + Live Badge + Full-Width Seekbar -->
-                <div class="flex flex-col gap-0.5 w-full">
-                  <div class="flex items-center justify-between px-0.5">
-                    <!-- Current Time / Total Duration -->
-                    <div id="time-display-box" class="text-[11px] font-mono text-slate-200 tracking-tight leading-none">
-                      <span id="current-time-text">00:00</span>
-                      <span class="text-slate-400 mx-0.5">/</span>
-                      <span id="duration-time-text">00:00</span>
-                    </div>
+                <!-- UPGRADE 2 FIX: 100% Round Center Play/Pause Ripple Feedback -->
+                <div
+                  id="player-center-ripple"
+                  class="force-circle hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-16 h-16 bg-indigo-600/90 backdrop-blur-md text-white flex items-center justify-center pointer-events-none shadow-2xl border border-white/30"
+                >
+                  <i id="player-center-ripple-icon" class="fa-solid fa-play text-2xl"></i>
+                </div>
 
-                    <!-- LIVE Stream Badge & Go Live Button -->
-                    <div id="live-stream-controls" class="hidden items-center gap-1.5">
-                      <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold uppercase leading-none">
-                        <span class="w-1.5 h-1.5 rounded-full bg-white live-dot"></span>
-                        LIVE
-                      </span>
-                      <button
-                        id="sync-live-btn"
-                        type="button"
-                        class="px-2 py-0.5 rounded bg-white/15 hover:bg-indigo-600 text-[10px] font-semibold text-white transition leading-none"
-                      >
-                        Go Live
+                <!-- UPGRADE 2 FIX: 100% Round Single Custom Loading Spinner Overlay -->
+                <div
+                  id="player-loading-overlay"
+                  class="hidden absolute inset-0 z-20 bg-black/65 backdrop-blur-[1px] flex flex-col items-center justify-center gap-2.5 pointer-events-none"
+                >
+                  <div class="force-circle w-11 h-11 border-4 border-indigo-500 border-t-transparent animate-spin"></div>
+                  <span id="player-loading-text" class="text-xs font-semibold text-slate-200">Buffering Stream...</span>
+                </div>
+
+                <!-- Responsive Speed & Quality Overlay Modal -->
+                <div
+                  id="player-menu-modal"
+                  class="hidden absolute inset-0 z-30 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-2.5 sm:p-6"
+                >
+                  <div class="w-full max-w-xs rounded-2xl bg-slate-900/95 border border-slate-700 p-3.5 sm:p-4 text-white shadow-2xl space-y-2.5 max-h-[90%] overflow-y-auto">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <span id="player-menu-title" class="text-xs font-bold uppercase tracking-wider text-indigo-400">Playback Settings</span>
+                      <button id="close-player-menu-btn" type="button" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-xs">
+                        <i class="fa-solid fa-xmark"></i>
                       </button>
                     </div>
-                  </div>
-
-                  <!-- Interactive Seekbar -->
-                  <div id="timeline-wrapper" class="timeline-container group">
-                    <div
-                      id="seek-hover-tooltip"
-                      class="hidden absolute -top-6 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-900/95 border border-slate-700 text-white font-mono text-[10px] font-bold pointer-events-none shadow"
-                    >
-                      00:00
-                    </div>
-                    <div class="timeline-track">
-                      <div id="seek-buffered-bar"></div>
-                      <div id="seek-played-bar"></div>
-                    </div>
-                    <input
-                      id="seek-slider"
-                      type="range"
-                      min="0"
-                      max="100"
-                      step="0.05"
-                      value="0"
-                      aria-label="Seek Timeline"
-                    />
+                    <div id="player-menu-options" class="grid grid-cols-2 gap-1.5 text-xs"></div>
                   </div>
                 </div>
 
-                <!-- BOTTOM ROW: Left & Right Action Buttons (Fits 360px Mobile Cleanly) -->
-                <div class="flex items-center justify-between w-full text-white">
-                  <!-- Left Group: Play/Pause, Prev, -10s, +10s, Next, Mute (+ Desktop Volume Slider) -->
-                  <div class="flex items-center gap-1">
-                    <button
-                      id="ctrl-play-btn"
-                      type="button"
-                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs sm:text-sm transition"
-                      title="Play / Pause (Space or K)"
-                    >
-                      <i id="ctrl-play-icon" class="fa-solid fa-play"></i>
-                    </button>
+                <!-- 2-ROW MOBILE CONTROL BAR LAYOUT -->
+                <div id="custom-controls" class="absolute bottom-0 inset-x-0 px-2 sm:px-4 pt-5 pb-1.5 sm:pb-2.5 flex flex-col gap-1 select-none">
 
-                    <button
-                      id="ctrl-prev-btn"
-                      type="button"
-                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs text-slate-200 hover:text-white transition"
-                      title="Previous Lecture"
-                    >
-                      <i class="fa-solid fa-backward-step"></i>
-                    </button>
+                  <!-- TOP ROW: Timestamp Strip + Live Badge + Full-Width Seekbar -->
+                  <div class="flex flex-col gap-0.5 w-full">
+                    <div class="flex items-center justify-between px-0.5">
+                      <div id="time-display-box" class="text-[11px] font-mono text-slate-200 tracking-tight leading-none">
+                        <span id="current-time-text">00:00</span>
+                        <span class="text-slate-400 mx-0.5">/</span>
+                        <span id="duration-time-text">00:00</span>
+                      </div>
 
-                    <button
-                      id="ctrl-rewind-btn"
-                      type="button"
-                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs text-slate-200 hover:text-white transition"
-                      title="Rewind 10s (J or Left Arrow)"
-                    >
-                      <i class="fa-solid fa-rotate-left"></i>
-                    </button>
+                      <div id="live-stream-controls" class="hidden items-center gap-1.5">
+                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-600 text-white text-[9px] font-bold uppercase leading-none">
+                          <span class="force-circle w-1.5 h-1.5 bg-white live-dot"></span>
+                          LIVE
+                        </span>
+                        <button
+                          id="sync-live-btn"
+                          type="button"
+                          class="px-2 py-0.5 rounded bg-white/15 hover:bg-indigo-600 text-[10px] font-semibold text-white transition leading-none"
+                        >
+                          Go Live
+                        </button>
+                      </div>
+                    </div>
 
-                    <button
-                      id="ctrl-forward-btn"
-                      type="button"
-                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs text-slate-200 hover:text-white transition"
-                      title="Forward 10s (L or Right Arrow)"
-                    >
-                      <i class="fa-solid fa-rotate-right"></i>
-                    </button>
-
-                    <button
-                      id="ctrl-next-btn"
-                      type="button"
-                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs text-slate-200 hover:text-white transition"
-                      title="Next Lecture"
-                    >
-                      <i class="fa-solid fa-forward-step"></i>
-                    </button>
-
-                    <!-- Mute Icon + Volume Range Slider (Hidden on <640px Mobile) -->
-                    <div class="flex items-center gap-1">
-                      <button
-                        id="ctrl-mute-btn"
-                        type="button"
-                        class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs transition"
-                        title="Mute / Unmute (M)"
+                    <!-- Interactive Seekbar -->
+                    <div id="timeline-wrapper" class="timeline-container group">
+                      <div
+                        id="seek-hover-tooltip"
+                        class="hidden absolute -top-6 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-900/95 border border-slate-700 text-white font-mono text-[10px] font-bold pointer-events-none shadow"
                       >
-                        <i id="ctrl-volume-icon" class="fa-solid fa-volume-high"></i>
-                      </button>
+                        00:00
+                      </div>
+                      <div class="timeline-track">
+                        <div id="seek-buffered-bar"></div>
+                        <div id="seek-played-bar"></div>
+                      </div>
                       <input
-                        id="volume-slider"
+                        id="seek-slider"
                         type="range"
                         min="0"
                         max="100"
-                        value="100"
-                        class="vol-slider hidden sm:block w-16 md:w-20"
-                        title="Volume"
+                        step="0.05"
+                        value="0"
+                        aria-label="Seek Timeline"
                       />
                     </div>
                   </div>
 
-                  <!-- Right Group: Bookmark Note, Speed, Quality, Screen Zoom/Fit, Fullscreen -->
-                  <div class="flex items-center gap-1">
-                    <!-- Quick Note Bookmark Button -->
-                    <button
-                      id="ctrl-quick-note-btn"
-                      type="button"
-                      class="w-7 h-7 sm:w-auto sm:h-8 sm:px-2 rounded-lg bg-indigo-600/85 hover:bg-indigo-500 text-xs font-bold text-white transition flex items-center justify-center gap-1"
-                      title="Bookmark Timestamp Note (Alt + N)"
-                    >
-                      <i class="fa-solid fa-bookmark text-[10px]"></i>
-                      <span class="hidden sm:inline text-[11px]">+Note</span>
-                    </button>
+                  <!-- BOTTOM ROW: Left & Right Action Buttons -->
+                  <div class="flex items-center justify-between w-full text-white">
+                    <div class="flex items-center gap-1">
+                      <button
+                        id="ctrl-play-btn"
+                        type="button"
+                        class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs sm:text-sm transition"
+                        title="Play / Pause (Space or K)"
+                      >
+                        <i id="ctrl-play-icon" class="fa-solid fa-play"></i>
+                      </button>
 
-                    <!-- Playback Speed Button -->
-                    <button
-                      id="ctrl-speed-btn"
-                      type="button"
-                      class="h-7 sm:h-8 px-1.5 sm:px-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] sm:text-xs font-bold text-white transition flex items-center justify-center gap-1"
-                      title="Playback Speed"
-                    >
-                      <span id="speed-active-label">1x</span>
-                    </button>
+                      <button
+                        id="ctrl-prev-btn"
+                        type="button"
+                        class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs text-slate-200 hover:text-white transition"
+                        title="Previous Lecture"
+                      >
+                        <i class="fa-solid fa-backward-step"></i>
+                      </button>
 
-                    <!-- Quality Selector Button -->
-                    <button
-                      id="ctrl-quality-btn"
-                      type="button"
-                      class="h-7 sm:h-8 px-1.5 sm:px-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] sm:text-xs font-bold text-white transition flex items-center justify-center gap-1"
-                      title="Video Quality"
-                    >
-                      <span id="quality-active-label">Auto</span>
-                    </button>
+                      <button
+                        id="ctrl-rewind-btn"
+                        type="button"
+                        class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs text-slate-200 hover:text-white transition"
+                        title="Rewind 10s (J or Left Arrow)"
+                      >
+                        <i class="fa-solid fa-rotate-left"></i>
+                      </button>
 
-                    <!-- BUG 1 FIX: Screen Fit / Zoom Toggle Button -->
-                    <button
-                      id="ctrl-zoom-btn"
-                      type="button"
-                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs transition"
-                      title="Screen Fit / Zoom to Fill (Z or Pinch)"
-                    >
-                      <i id="ctrl-zoom-icon" class="fa-solid fa-expand-arrows-alt"></i>
-                    </button>
+                      <button
+                        id="ctrl-forward-btn"
+                        type="button"
+                        class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs text-slate-200 hover:text-white transition"
+                        title="Forward 10s (L or Right Arrow)"
+                      >
+                        <i class="fa-solid fa-rotate-right"></i>
+                      </button>
 
-                    <!-- Custom Fullscreen Button -->
-                    <button
-                      id="ctrl-fullscreen-btn"
-                      type="button"
-                      class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs sm:text-sm transition"
-                      title="Fullscreen (F)"
-                    >
-                      <i id="ctrl-fullscreen-icon" class="fa-solid fa-expand"></i>
-                    </button>
+                      <button
+                        id="ctrl-next-btn"
+                        type="button"
+                        class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs text-slate-200 hover:text-white transition"
+                        title="Next Lecture"
+                      >
+                        <i class="fa-solid fa-forward-step"></i>
+                      </button>
+
+                      <div class="flex items-center gap-1">
+                        <button
+                          id="ctrl-mute-btn"
+                          type="button"
+                          class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs transition"
+                          title="Mute / Unmute (M)"
+                        >
+                          <i id="ctrl-volume-icon" class="fa-solid fa-volume-high"></i>
+                        </button>
+                        <input
+                          id="volume-slider"
+                          type="range"
+                          min="0"
+                          max="100"
+                          value="100"
+                          class="vol-slider hidden sm:block w-16 md:w-20"
+                          title="Volume"
+                        />
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-1">
+                      <button
+                        id="ctrl-quick-note-btn"
+                        type="button"
+                        class="w-7 h-7 sm:w-auto sm:h-8 sm:px-2.5 rounded-lg bg-indigo-600/90 hover:bg-indigo-500 text-xs font-bold text-white transition flex items-center justify-center gap-1"
+                        title="Bookmark Timestamp Note (Alt + N)"
+                      >
+                        <i class="fa-solid fa-bookmark text-[10px]"></i>
+                        <span class="hidden sm:inline text-[11px]">+Note</span>
+                      </button>
+
+                      <button
+                        id="ctrl-speed-btn"
+                        type="button"
+                        class="h-7 sm:h-8 px-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] sm:text-xs font-bold text-white transition flex items-center justify-center"
+                        title="Playback Speed"
+                      >
+                        <span id="speed-active-label">1x</span>
+                      </button>
+
+                      <button
+                        id="ctrl-quality-btn"
+                        type="button"
+                        class="h-7 sm:h-8 px-2 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] sm:text-xs font-bold text-white transition flex items-center justify-center"
+                        title="Video Quality"
+                      >
+                        <span id="quality-active-label">Auto</span>
+                      </button>
+
+                      <button
+                        id="ctrl-zoom-btn"
+                        type="button"
+                        class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs transition"
+                        title="Screen Fit / Zoom to Fill (Z or Pinch)"
+                      >
+                        <i id="ctrl-zoom-icon" class="fa-solid fa-expand-arrows-alt"></i>
+                      </button>
+
+                      <button
+                        id="ctrl-fullscreen-btn"
+                        type="button"
+                        class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg hover:bg-white/15 flex items-center justify-center text-xs sm:text-sm transition"
+                        title="Fullscreen (F)"
+                      >
+                        <i id="ctrl-fullscreen-icon" class="fa-solid fa-expand"></i>
+                      </button>
+                    </div>
                   </div>
+
                 </div>
-
-              </div>
-            </div>
-          </div>
-
-          <!-- Content Below Sticky Player -->
-          <div class="px-3 sm:px-0 space-y-4">
-
-            <!-- In-Classroom Saved Resume Prompt Banner -->
-            <div id="classroom-resume-prompt" class="hidden rounded-xl bg-indigo-950/70 border border-indigo-500/40 px-3.5 py-2.5 flex items-center justify-between gap-2 text-white">
-              <div class="flex items-center gap-2 text-xs min-w-0">
-                <i class="fa-solid fa-clock-rotate-left text-indigo-400 shrink-0"></i>
-                <span id="classroom-resume-text" class="truncate">Resume saved position?</span>
-              </div>
-              <div class="flex items-center gap-1.5 shrink-0">
-                <button id="classroom-resume-yes-btn" type="button" class="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">
-                  Resume
-                </button>
-                <button id="classroom-resume-close-btn" type="button" class="w-7 h-7 rounded-lg hover:bg-white/10 text-slate-300 flex items-center justify-center text-xs" title="Close">
-                  <i class="fa-solid fa-xmark"></i>
-                </button>
               </div>
             </div>
 
-            <!-- Active Lecture Details & Mark Completed Card -->
-            <div class="rounded-2xl swp-card border swp-border p-4 sm:p-5 space-y-3 shadow-sm">
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div class="space-y-1">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <span id="active-lecture-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
-                      Lecture #1
-                    </span>
-                    <span id="active-lecture-subject" class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold swp-elevated swp-text-sec">
-                      Subject
-                    </span>
-                    <span id="active-lecture-topic" class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-400">
-                      Module
-                    </span>
-                  </div>
-                  <h1 id="active-lecture-title" class="text-base sm:text-xl font-bold swp-text leading-snug">
-                    Select a Subject and Lecture to begin studying
-                  </h1>
+            <!-- Content Below Sticky Player -->
+            <div class="px-3 sm:px-0 space-y-4">
+
+              <!-- In-Classroom Saved Resume Prompt Banner -->
+              <div id="classroom-resume-prompt" class="hidden rounded-xl bg-indigo-950/70 border border-indigo-500/40 px-3.5 py-2.5 flex items-center justify-between gap-2 text-white">
+                <div class="flex items-center gap-2 text-xs min-w-0">
+                  <i class="fa-solid fa-clock-rotate-left text-indigo-400 shrink-0"></i>
+                  <span id="classroom-resume-text" class="truncate">Resume saved position?</span>
                 </div>
-
-                <button
-                  id="toggle-complete-btn"
-                  type="button"
-                  class="px-4 py-2.5 rounded-xl border swp-border swp-elevated hover:border-emerald-500/50 text-xs sm:text-sm font-semibold swp-text flex items-center justify-center gap-2 transition shrink-0"
-                >
-                  <i id="toggle-complete-icon" class="fa-regular fa-circle-check swp-text-muted"></i>
-                  <span id="toggle-complete-text">Mark Completed</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- WORKSPACE TABS: 1. TIMESTAMPED STUDY NOTES | 2. SHORTCUTS & OVERVIEW -->
-            <div class="rounded-2xl swp-card border swp-border overflow-hidden shadow-sm">
-              <div class="flex border-b swp-border swp-elevated/50">
-                <button
-                  type="button"
-                  data-workspace-tab="notes"
-                  class="workspace-tab-btn flex-1 py-3 px-4 text-xs sm:text-sm font-bold border-b-2 border-indigo-500 text-indigo-400 flex items-center justify-center gap-2 transition"
-                >
-                  <i class="fa-solid fa-bookmark"></i>
-                  <span>My Timestamped Notes</span>
-                  <span id="notes-count-pill" class="px-2 py-0.2 rounded-full text-[10px] bg-indigo-500/20 text-indigo-400">0</span>
-                </button>
-
-                <button
-                  type="button"
-                  data-workspace-tab="overview"
-                  class="workspace-tab-btn flex-1 py-3 px-4 text-xs sm:text-sm font-semibold border-b-2 border-transparent swp-text-sec hover:text-indigo-400 flex items-center justify-center gap-2 transition"
-                >
-                  <i class="fa-solid fa-circle-info"></i>
-                  <span>Gestures & Info</span>
-                </button>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button id="classroom-resume-yes-btn" type="button" class="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">
+                    Resume
+                  </button>
+                  <button id="classroom-resume-close-btn" type="button" class="w-7 h-7 rounded-lg hover:bg-white/10 text-slate-300 flex items-center justify-center text-xs" title="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
               </div>
 
-              <!-- TAB 1: Timestamped Study Notes -->
-              <div id="workspace-panel-notes" class="p-4 sm:p-5 space-y-4">
-                <form id="study-note-form" class="space-y-3">
-                  <div class="flex flex-col sm:flex-row gap-2.5">
-                    <input
-                      id="study-note-input"
-                      type="text"
-                      placeholder="Write a formula, key concept, or revision point... (Alt + N)"
-                      class="flex-1 px-3.5 py-2.5 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500"
-                    />
-                    <button
-                      type="submit"
-                      class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shrink-0 shadow-md shadow-indigo-600/20"
-                    >
-                      <i class="fa-solid fa-clock"></i>
-                      <span>Save at <span id="note-live-timestamp-btn" class="font-mono">[00:00]</span></span>
-                    </button>
+              <!-- Active Lecture Details & Mark Completed Card -->
+              <div class="rounded-2xl swp-card border swp-border p-4 sm:p-5 space-y-3 shadow-sm">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div class="space-y-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span id="active-lecture-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
+                        Lecture #1
+                      </span>
+                      <span id="active-lecture-subject" class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold swp-elevated swp-text-sec">
+                        Subject
+                      </span>
+                      <span id="active-lecture-topic" class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-400">
+                        Module
+                      </span>
+                    </div>
+                    <h1 id="active-lecture-title" class="text-base sm:text-xl font-bold swp-text leading-snug">
+                      Select a Subject and Lecture to begin studying
+                    </h1>
                   </div>
-                </form>
 
-                <div class="flex items-center justify-between text-xs swp-text-sec">
-                  <span>Click any <strong class="text-indigo-400 font-mono">[MM:SS]</strong> badge to seek directly:</span>
-                  <button id="export-notes-btn" type="button" class="text-indigo-400 hover:underline font-semibold flex items-center gap-1">
-                    <i class="fa-solid fa-download text-[10px]"></i>
-                    <span>Export .txt</span>
+                  <button
+                    id="toggle-complete-btn"
+                    type="button"
+                    class="px-4 py-2.5 rounded-xl border swp-border swp-elevated hover:border-emerald-500/50 text-xs sm:text-sm font-semibold swp-text flex items-center justify-center gap-2 transition shrink-0"
+                  >
+                    <i id="toggle-complete-icon" class="fa-regular fa-circle-check swp-text-muted"></i>
+                    <span id="toggle-complete-text">Mark Completed</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- WORKSPACE TABS: 1. TIMESTAMPED STUDY NOTES | 2. SHORTCUTS & OVERVIEW -->
+              <div class="rounded-2xl swp-card border swp-border overflow-hidden shadow-sm">
+                <div class="flex border-b swp-border swp-elevated/50">
+                  <button
+                    type="button"
+                    data-workspace-tab="notes"
+                    class="workspace-tab-btn flex-1 py-3 px-4 text-xs sm:text-sm font-bold border-b-2 border-indigo-500 text-indigo-400 flex items-center justify-center gap-2 transition"
+                  >
+                    <i class="fa-solid fa-bookmark"></i>
+                    <span>My Timestamped Notes</span>
+                    <span id="notes-count-pill" class="px-2 py-0.2 rounded-full text-[10px] bg-indigo-500/20 text-indigo-400">0</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    data-workspace-tab="overview"
+                    class="workspace-tab-btn flex-1 py-3 px-4 text-xs sm:text-sm font-semibold border-b-2 border-transparent swp-text-sec hover:text-indigo-400 flex items-center justify-center gap-2 transition"
+                  >
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Gestures & Info</span>
                   </button>
                 </div>
 
-                <div id="study-notes-list" class="space-y-2.5 max-h-72 overflow-y-auto pr-1"></div>
+                <!-- TAB 1: Timestamped Study Notes -->
+                <div id="workspace-panel-notes" class="p-4 sm:p-5 space-y-4">
+                  <form id="study-note-form" class="space-y-3">
+                    <div class="flex flex-col sm:flex-row gap-2.5">
+                      <input
+                        id="study-note-input"
+                        type="text"
+                        placeholder="Write a formula, key concept, or revision point... (Alt + N)"
+                        class="flex-1 px-3.5 py-2.5 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500"
+                      />
+                      <button
+                        type="submit"
+                        class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shrink-0 shadow-md shadow-indigo-600/20"
+                      >
+                        <i class="fa-solid fa-clock"></i>
+                        <span>Save at <span id="note-live-timestamp-btn" class="font-mono">[00:00]</span></span>
+                      </button>
+                    </div>
+                  </form>
+
+                  <div class="flex items-center justify-between text-xs swp-text-sec">
+                    <span>Click any <strong class="text-indigo-400 font-mono">[MM:SS]</strong> badge to seek directly:</span>
+                    <button id="export-notes-btn" type="button" class="text-indigo-400 hover:underline font-semibold flex items-center gap-1">
+                      <i class="fa-solid fa-download text-[10px]"></i>
+                      <span>Export .txt</span>
+                    </button>
+                  </div>
+
+                  <div id="study-notes-list" class="space-y-2.5 max-h-72 overflow-y-auto pr-1"></div>
+                </div>
+
+                <!-- TAB 2: Batch Overview & Touch Gesture Guide -->
+                <div id="workspace-panel-overview" class="hidden p-4 sm:p-5 space-y-4">
+                  <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider swp-text-sec mb-1">Batch Description</h4>
+                    <p id="classroom-batch-desc" class="text-xs sm:text-sm swp-text leading-relaxed"></p>
+                  </div>
+
+                  <div class="border-t swp-border pt-3">
+                    <h4 class="text-xs font-bold uppercase tracking-wider swp-text-sec mb-2.5">Touch Gestures & Keyboard Shortcuts</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                      <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Double-Tap Left / Right</span><span class="font-bold text-indigo-400">⏪ ±10s Seek ⏩</span></div>
+                      <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Two-Finger Pinch / Z Key</span><span class="font-bold text-emerald-400">🔍 Zoom to Fill Screen</span></div>
+                      <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Press & Hold Video</span><span class="font-bold text-amber-400">⚡ Temporary 2x Speed</span></div>
+                      <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Keyboard Shortcuts</span><span class="font-mono text-indigo-400">Space, K, J, L, F, Z, M</span></div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <!-- TAB 2: Batch Overview & Touch Gesture Guide -->
-              <div id="workspace-panel-overview" class="hidden p-4 sm:p-5 space-y-4">
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: Subject Modules + Active Lecture Queue -->
+          <div id="classroom-right-col" class="w-full lg:w-[32%] px-3 sm:px-0 space-y-4">
+
+            <!-- 1. Modules Selector inside Active Subject -->
+            <div class="rounded-2xl swp-card border swp-border p-4 space-y-3 shadow-sm">
+              <div class="flex items-center justify-between">
                 <div>
-                  <h4 class="text-xs font-bold uppercase tracking-wider swp-text-sec mb-1">Batch Description</h4>
-                  <p id="classroom-batch-desc" class="text-xs sm:text-sm swp-text leading-relaxed"></p>
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-400">Subject Modules</span>
+                  <h3 id="sidebar-active-subject-title" class="text-sm sm:text-base font-bold swp-text">Chapters & Classes</h3>
+                </div>
+                <span id="sidebar-subject-progress-badge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                  0% Done
+                </span>
+              </div>
+
+              <div class="w-full h-1.5 rounded-full swp-elevated overflow-hidden">
+                <div id="sidebar-subject-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 transition-all duration-300" style="width: 0%"></div>
+              </div>
+
+              <div id="subject-contents-selector" class="space-y-1.5 max-h-48 overflow-y-auto pr-1"></div>
+            </div>
+
+            <!-- 2. Active Playlist / Lecture Queue -->
+            <div class="rounded-2xl swp-card border swp-border flex flex-col overflow-hidden shadow-sm">
+              <div class="p-4 border-b swp-border space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-1.5">
+                      <h3 id="queue-header-title" class="font-bold text-sm swp-text truncate">Lecture Queue</h3>
+                      <span id="playlist-sync-status" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
+                        Ready
+                      </span>
+                    </div>
+                    <p class="text-[11px] swp-text-sec"><span id="sidebar-lecture-counter">0 Lectures</span></p>
+                  </div>
+
+                  <button
+                    id="classroom-refresh-playlist-btn"
+                    type="button"
+                    class="p-2 rounded-xl swp-elevated hover:text-indigo-400 text-xs swp-text-sec transition shrink-0"
+                    title="Re-sync Active Playlist"
+                  >
+                    <i class="fa-solid fa-rotate"></i>
+                  </button>
                 </div>
 
-                <div class="border-t swp-border pt-3">
-                  <h4 class="text-xs font-bold uppercase tracking-wider swp-text-sec mb-2.5">Touch Gestures & Keyboard Shortcuts</h4>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Double-Tap Left / Right</span><span class="font-bold text-indigo-400">⏪ ±10s Seek ⏩</span></div>
-                    <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Two-Finger Pinch / Z Key</span><span class="font-bold text-emerald-400">🔍 Zoom to Fill Screen</span></div>
-                    <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Press & Hold Video</span><span class="font-bold text-amber-400">⚡ Temporary 2x Speed</span></div>
-                    <div class="p-2.5 rounded-xl swp-elevated flex items-center justify-between"><span>Keyboard Shortcuts</span><span class="font-mono text-indigo-400">Space, K, J, L, F, Z, M</span></div>
-                  </div>
+                <!-- Filter Tabs -->
+                <div class="grid grid-cols-3 gap-1 swp-input p-1 rounded-xl border swp-border text-[11px] font-semibold">
+                  <button type="button" data-tab="all" class="sidebar-tab-btn py-1.5 px-2 rounded-lg bg-indigo-600 text-white transition truncate">All</button>
+                  <button type="button" data-tab="pending" class="sidebar-tab-btn py-1.5 px-2 rounded-lg swp-text-sec hover:text-indigo-400 transition truncate">Pending</button>
+                  <button type="button" data-tab="completed" class="sidebar-tab-btn py-1.5 px-2 rounded-lg swp-text-sec hover:text-indigo-400 transition truncate">Completed ✅</button>
+                </div>
+
+                <div class="relative">
+                  <i class="fa-solid fa-filter absolute left-3 top-1/2 -translate-y-1/2 swp-text-muted text-xs"></i>
+                  <input
+                    id="playlist-search-input"
+                    type="text"
+                    placeholder="Filter lectures in this module..."
+                    class="w-full pl-8 pr-3 py-1.5 rounded-lg swp-input border swp-border text-xs focus:outline-none focus:border-indigo-500"
+                  />
                 </div>
               </div>
+
+              <div id="playlist-items-container" class="divide-y swp-border max-h-[450px] overflow-y-auto"></div>
             </div>
 
           </div>
         </div>
+      </section>
 
-        <!-- RIGHT COLUMN: Subject Modules (Playlists & Videos) + Active Lecture Queue -->
-        <div id="classroom-right-col" class="w-full lg:w-[32%] px-3 sm:px-0 space-y-4">
+      <!-- ========================================================
+           VIEW 3: ADMIN PANEL (HIERARCHICAL CRUD)
+           ======================================================== -->
+      <section id="view-admin" class="hidden px-3 sm:px-0 py-5 sm:py-0 space-y-8">
 
-          <!-- 1. Modules Selector inside Active Subject -->
-          <div class="rounded-2xl swp-card border swp-border p-4 space-y-3 shadow-sm">
-            <div class="flex items-center justify-between">
-              <div>
-                <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-400">Subject Modules</span>
-                <h3 id="sidebar-active-subject-title" class="text-sm sm:text-base font-bold swp-text">Chapters & Classes</h3>
-              </div>
-              <span id="sidebar-subject-progress-badge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                0% Done
-              </span>
+        <!-- Admin Top Banner -->
+        <div class="rounded-2xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border border-purple-500/30 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white shadow-xl">
+          <div class="space-y-1">
+            <div class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-purple-400">
+              <i class="fa-solid fa-sitemap"></i>
+              <span>Hierarchical Course Architect</span>
             </div>
-
-            <div class="w-full h-1.5 rounded-full swp-elevated overflow-hidden">
-              <div id="sidebar-subject-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 transition-all duration-300" style="width: 0%"></div>
-            </div>
-
-            <div id="subject-contents-selector" class="space-y-1.5 max-h-48 overflow-y-auto pr-1"></div>
+            <h1 class="text-xl sm:text-2xl font-bold font-display">Manage Batches → Subjects → Playlists & Videos</h1>
+            <p class="text-xs sm:text-sm text-slate-300">All updates sync live with Firebase Realtime Database.</p>
           </div>
+          <button
+            id="admin-logout-btn"
+            type="button"
+            class="px-4 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-200 text-xs font-semibold flex items-center gap-2 self-start sm:self-center transition"
+          >
+            <i class="fa-solid fa-lock"></i>
+            <span>Lock Admin</span>
+          </button>
+        </div>
 
-          <!-- 2. Active Playlist / Lecture Queue -->
-          <div class="rounded-2xl swp-card border swp-border flex flex-col overflow-hidden shadow-sm">
-            <div class="p-4 border-b swp-border space-y-3">
-              <div class="flex items-center justify-between gap-2">
-                <div class="min-w-0">
-                  <div class="flex items-center gap-1.5">
-                    <h3 id="queue-header-title" class="font-bold text-sm swp-text truncate">Lecture Queue</h3>
-                    <span id="playlist-sync-status" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">
-                      Ready
-                    </span>
-                  </div>
-                  <p class="text-[11px] swp-text-sec"><span id="sidebar-lecture-counter">0 Lectures</span></p>
+        <!-- 3-STEP HIERARCHICAL BUILDER GRID -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          <!-- STEP 1: CREATE / EDIT BATCH -->
+          <div class="lg:col-span-4 rounded-2xl swp-card border swp-border p-5 space-y-4 shadow-sm">
+            <div class="flex items-center justify-between border-b swp-border pb-3">
+              <div class="flex items-center gap-2.5">
+                <span class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 font-bold text-xs flex items-center justify-center">1</span>
+                <h2 id="batch-form-heading" class="text-base font-bold swp-text">Create / Edit Batch</h2>
+              </div>
+              <span id="batch-edit-mode-badge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400">Editing</span>
+            </div>
+
+            <form id="batch-crud-form" class="space-y-3.5">
+              <input type="hidden" id="batch-id-input" value="" />
+              <div>
+                <label class="block text-xs font-semibold swp-text-sec mb-1">Batch Name *</label>
+                <input id="batch-name-input" type="text" required placeholder="e.g., Target JEE 2027" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold swp-text-sec mb-1">Target Exam *</label>
+                  <input id="batch-exam-input" type="text" required placeholder="JEE / NEET / CS" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
                 </div>
+                <div>
+                  <label class="block text-xs font-semibold swp-text-sec mb-1">Language *</label>
+                  <select id="batch-lang-input" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500">
+                    <option value="Hinglish">Hinglish</option>
+                    <option value="English">English</option>
+                    <option value="Hindi">Hindi</option>
+                  </select>
+                </div>
+              </div>
 
-                <button
-                  id="classroom-refresh-playlist-btn"
-                  type="button"
-                  class="p-2 rounded-xl swp-elevated hover:text-indigo-400 text-xs swp-text-sec transition shrink-0"
-                  title="Re-sync Active Playlist"
-                >
-                  <i class="fa-solid fa-rotate"></i>
+              <div>
+                <label class="block text-xs font-semibold swp-text-sec mb-1">Thumbnail Image URL (Optional)</label>
+                <input id="batch-thumb-input" type="url" placeholder="https://images.unsplash.com/..." class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
+                <div class="mt-2 flex items-center gap-3 p-2 rounded-xl swp-input border swp-border">
+                  <img id="batch-thumb-preview" src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80" alt="Preview" class="w-20 aspect-video object-cover rounded-lg border swp-border shrink-0" />
+                  <span class="text-[11px] swp-text-sec leading-tight">Live 16:9 cover preview</span>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold swp-text-sec mb-1">Batch Description *</label>
+                <textarea id="batch-desc-input" rows="3" required placeholder="Structured chapter-wise playlists and personal revision workspace..." class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500"></textarea>
+              </div>
+
+              <div class="flex items-center gap-2 pt-1">
+                <button type="submit" class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-floppy-disk"></i>
+                  <span id="save-batch-btn-text">Save Batch</span>
                 </button>
+                <button type="button" id="cancel-edit-btn" class="hidden py-2.5 px-3 rounded-xl swp-elevated swp-text text-xs font-semibold">Cancel</button>
               </div>
-
-              <!-- Filter Tabs -->
-              <div class="grid grid-cols-3 gap-1 swp-input p-1 rounded-xl border swp-border text-[11px] font-semibold">
-                <button type="button" data-tab="all" class="sidebar-tab-btn py-1.5 px-2 rounded-lg bg-indigo-600 text-white transition truncate">All</button>
-                <button type="button" data-tab="pending" class="sidebar-tab-btn py-1.5 px-2 rounded-lg swp-text-sec hover:text-indigo-400 transition truncate">Pending</button>
-                <button type="button" data-tab="completed" class="sidebar-tab-btn py-1.5 px-2 rounded-lg swp-text-sec hover:text-indigo-400 transition truncate">Completed ✅</button>
-              </div>
-
-              <div class="relative">
-                <i class="fa-solid fa-filter absolute left-3 top-1/2 -translate-y-1/2 swp-text-muted text-xs"></i>
-                <input
-                  id="playlist-search-input"
-                  type="text"
-                  placeholder="Filter lectures in this module..."
-                  class="w-full pl-8 pr-3 py-1.5 rounded-lg swp-input border swp-border text-xs focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-            </div>
-
-            <div id="playlist-items-container" class="divide-y swp-border max-h-[450px] overflow-y-auto"></div>
+            </form>
           </div>
 
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================================
-         VIEW 3: ADMIN PANEL (HIERARCHICAL CRUD)
-         ======================================================== -->
-    <section id="view-admin" class="hidden px-3 sm:px-0 py-5 sm:py-0 space-y-8">
-
-      <!-- Admin Top Banner -->
-      <div class="rounded-2xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border border-purple-500/30 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white shadow-xl">
-        <div class="space-y-1">
-          <div class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-purple-400">
-            <i class="fa-solid fa-sitemap"></i>
-            <span>Hierarchical Course Architect</span>
-          </div>
-          <h1 class="text-xl sm:text-2xl font-bold font-display">Manage Batches → Subjects → Playlists & Videos</h1>
-          <p class="text-xs sm:text-sm text-slate-300">All updates sync live with Firebase Realtime Database.</p>
-        </div>
-        <button
-          id="admin-logout-btn"
-          type="button"
-          class="px-4 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-200 text-xs font-semibold flex items-center gap-2 self-start sm:self-center transition"
-        >
-          <i class="fa-solid fa-lock"></i>
-          <span>Lock Admin</span>
-        </button>
-      </div>
-
-      <!-- 3-STEP HIERARCHICAL BUILDER GRID -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-        <!-- STEP 1: CREATE / EDIT BATCH -->
-        <div class="lg:col-span-4 rounded-2xl swp-card border swp-border p-5 space-y-4 shadow-sm">
-          <div class="flex items-center justify-between border-b swp-border pb-3">
-            <div class="flex items-center gap-2.5">
-              <span class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 font-bold text-xs flex items-center justify-center">1</span>
-              <h2 id="batch-form-heading" class="text-base font-bold swp-text">Create / Edit Batch</h2>
-            </div>
-            <span id="batch-edit-mode-badge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400">Editing</span>
-          </div>
-
-          <form id="batch-crud-form" class="space-y-3.5">
-            <input type="hidden" id="batch-id-input" value="" />
-            <div>
-              <label class="block text-xs font-semibold swp-text-sec mb-1">Batch Name *</label>
-              <input id="batch-name-input" type="text" required placeholder="e.g., Target JEE 2027" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
+          <!-- STEP 2: MANAGE SUBJECTS -->
+          <div id="admin-subject-card" class="lg:col-span-4 rounded-2xl swp-card border swp-border p-5 space-y-4 shadow-sm">
+            <div class="flex items-center justify-between border-b swp-border pb-3">
+              <div class="flex items-center gap-2.5">
+                <span class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 font-bold text-xs flex items-center justify-center">2</span>
+                <div>
+                  <h2 class="text-base font-bold swp-text">Manage Subjects</h2>
+                  <p class="text-[11px] swp-text-sec">Add subjects inside a Batch</p>
+                </div>
+              </div>
+              <span id="subject-edit-badge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400">Editing</span>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+            <form id="subject-crud-form" class="space-y-3">
+              <input type="hidden" id="subject-edit-id" value="" />
               <div>
-                <label class="block text-xs font-semibold swp-text-sec mb-1">Target Exam *</label>
-                <input id="batch-exam-input" type="text" required placeholder="JEE / NEET / CS" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
-              </div>
-              <div>
-                <label class="block text-xs font-semibold swp-text-sec mb-1">Language *</label>
-                <select id="batch-lang-input" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500">
-                  <option value="Hinglish">Hinglish</option>
-                  <option value="English">English</option>
-                  <option value="Hindi">Hindi</option>
+                <label class="block text-xs font-semibold swp-text-sec mb-1">1. Select Batch *</label>
+                <select id="admin-subject-batch-select" required class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500">
+                  <option value="">-- Choose Batch --</option>
                 </select>
               </div>
-            </div>
 
-            <div>
-              <label class="block text-xs font-semibold swp-text-sec mb-1">Thumbnail Image URL (Optional)</label>
-              <input id="batch-thumb-input" type="url" placeholder="https://images.unsplash.com/..." class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
-              <div class="mt-2 flex items-center gap-3 p-2 rounded-xl swp-input border swp-border">
-                <img id="batch-thumb-preview" src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80" alt="Preview" class="w-20 aspect-video object-cover rounded-lg border swp-border shrink-0" />
-                <span class="text-[11px] swp-text-sec leading-tight">Live 16:9 cover preview</span>
+              <div>
+                <label class="block text-xs font-semibold swp-text-sec mb-1">2. Subject Name *</label>
+                <input id="subject-name-input" type="text" required placeholder="e.g., Physics, Organic Chemistry, Maths" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold swp-text-sec mb-1">Subject Icon</label>
+                  <select id="subject-icon-input" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500">
+                    <option value="fa-atom">⚛️ Physics</option>
+                    <option value="fa-flask">🧪 Chemistry</option>
+                    <option value="fa-square-root-variable">📐 Mathematics</option>
+                    <option value="fa-dna">🧬 Biology</option>
+                    <option value="fa-laptop-code">💻 Coding / CS</option>
+                    <option value="fa-bolt">⚡ Revision</option>
+                    <option value="fa-book">📘 General</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold swp-text-sec mb-1">Accent Color</label>
+                  <select id="subject-color-input" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500">
+                    <option value="indigo">Indigo</option>
+                    <option value="purple">Purple</option>
+                    <option value="emerald">Emerald</option>
+                    <option value="amber">Amber</option>
+                    <option value="rose">Rose</option>
+                    <option value="cyan">Cyan</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button type="submit" class="flex-1 py-2 px-4 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-plus"></i>
+                  <span id="subject-save-btn-text">Add Subject</span>
+                </button>
+                <button type="button" id="subject-cancel-edit-btn" class="hidden py-2 px-3 rounded-xl swp-elevated swp-text text-xs font-semibold">Cancel</button>
+              </div>
+            </form>
+
+            <div class="border-t swp-border pt-3 space-y-2">
+              <div class="flex items-center justify-between text-xs swp-text-sec">
+                <span>Subjects in Batch:</span>
+                <span id="admin-subjects-count" class="font-bold text-purple-400">0</span>
+              </div>
+              <div id="admin-subjects-list" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+            </div>
+          </div>
+
+          <!-- STEP 3: ADD MULTIPLE PLAYLISTS & SINGLE VIDEOS -->
+          <div id="admin-content-card" class="lg:col-span-4 rounded-2xl swp-card border swp-border p-5 space-y-4 shadow-sm">
+            <div class="flex items-center justify-between border-b swp-border pb-3">
+              <div class="flex items-center gap-2.5">
+                <span class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center justify-center">3</span>
+                <div>
+                  <h2 class="text-base font-bold swp-text">Add Playlists & Videos</h2>
+                  <p class="text-[11px] swp-text-sec">Attach chapters or single classes to a Subject</p>
+                </div>
               </div>
             </div>
 
-            <div>
-              <label class="block text-xs font-semibold swp-text-sec mb-1">Batch Description *</label>
-              <textarea id="batch-desc-input" rows="3" required placeholder="Structured chapter-wise playlists and personal revision workspace..." class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500"></textarea>
-            </div>
+            <form id="content-crud-form" class="space-y-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label class="block text-xs font-semibold swp-text-sec mb-1">Batch *</label>
+                  <select id="admin-content-batch-select" required class="w-full px-2.5 py-2 rounded-xl swp-input border swp-border text-xs focus:outline-none focus:border-indigo-500">
+                    <option value="">-- Batch --</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold swp-text-sec mb-1">Subject *</label>
+                  <select id="admin-content-subject-select" required class="w-full px-2.5 py-2 rounded-xl swp-input border swp-border text-xs focus:outline-none focus:border-indigo-500">
+                    <option value="">-- Subject --</option>
+                  </select>
+                </div>
+              </div>
 
-            <div class="flex items-center gap-2 pt-1">
-              <button type="submit" class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2">
-                <i class="fa-solid fa-floppy-disk"></i>
-                <span id="save-batch-btn-text">Save Batch</span>
+              <div>
+                <label class="block text-xs font-semibold swp-text-sec mb-1">Content Type *</label>
+                <select id="content-type-input" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500">
+                  <option value="playlist">📚 YouTube Playlist (Full Chapter)</option>
+                  <option value="video">🎬 Single Recorded Lecture (Video URL/ID)</option>
+                  <option value="live">🔴 Live Stream Session (Live URL/ID)</option>
+                </select>
+              </div>
+
+              <div>
+                <label id="content-title-label" class="block text-xs font-semibold swp-text-sec mb-1">Chapter / Playlist Title *</label>
+                <input id="content-title-input" type="text" required placeholder="e.g., Ch 01: Electrostatics Playlist" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
+              </div>
+
+              <div>
+                <label id="content-url-label" class="block text-xs font-semibold swp-text-sec mb-1">YouTube Playlist URL or ID *</label>
+                <input id="content-url-input" type="text" required placeholder="https://youtube.com/playlist?list=PL... or watch?v=..." class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
+              </div>
+
+              <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-md">
+                <i class="fa-solid fa-circle-plus"></i>
+                <span>Add to Subject</span>
               </button>
-              <button type="button" id="cancel-edit-btn" class="hidden py-2.5 px-3 rounded-xl swp-elevated swp-text text-xs font-semibold">Cancel</button>
-            </div>
-          </form>
-        </div>
+            </form>
 
-        <!-- STEP 2: MANAGE SUBJECTS -->
-        <div id="admin-subject-card" class="lg:col-span-4 rounded-2xl swp-card border swp-border p-5 space-y-4 shadow-sm">
-          <div class="flex items-center justify-between border-b swp-border pb-3">
-            <div class="flex items-center gap-2.5">
-              <span class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 font-bold text-xs flex items-center justify-center">2</span>
-              <div>
-                <h2 class="text-base font-bold swp-text">Manage Subjects</h2>
-                <p class="text-[11px] swp-text-sec">Add subjects inside a Batch</p>
+            <div class="border-t swp-border pt-3 space-y-2">
+              <div class="flex items-center justify-between text-xs swp-text-sec">
+                <span>Modules in Subject:</span>
+                <span id="admin-contents-count" class="font-bold text-emerald-400">0</span>
               </div>
+              <div id="admin-contents-list" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
             </div>
-            <span id="subject-edit-badge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400">Editing</span>
           </div>
 
-          <form id="subject-crud-form" class="space-y-3">
-            <input type="hidden" id="subject-edit-id" value="" />
-            <div>
-              <label class="block text-xs font-semibold swp-text-sec mb-1">1. Select Batch *</label>
-              <select id="admin-subject-batch-select" required class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500">
-                <option value="">-- Choose Batch --</option>
-              </select>
-            </div>
+        </div>
 
-            <div>
-              <label class="block text-xs font-semibold swp-text-sec mb-1">2. Subject Name *</label>
-              <input id="subject-name-input" type="text" required placeholder="e.g., Physics, Organic Chemistry, Maths" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
+        <!-- BATCHES DIRECTORY + GLOBAL SETTINGS -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-8 rounded-2xl swp-card border swp-border overflow-hidden shadow-sm">
+            <div class="p-5 border-b swp-border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <label class="block text-xs font-semibold swp-text-sec mb-1">Subject Icon</label>
-                <select id="subject-icon-input" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500">
-                  <option value="fa-atom">⚛️ Physics</option>
-                  <option value="fa-flask">🧪 Chemistry</option>
-                  <option value="fa-square-root-variable">📐 Mathematics</option>
-                  <option value="fa-dna">🧬 Biology</option>
-                  <option value="fa-laptop-code">💻 Coding / CS</option>
-                  <option value="fa-bolt">⚡ Revision</option>
-                  <option value="fa-book">📘 General</option>
-                </select>
+                <h2 class="text-base font-bold swp-text">All Study Batches Directory</h2>
+                <p class="text-xs swp-text-sec">Edit batches, manage subjects, or delete batches</p>
+              </div>
+              <span id="admin-total-batches" class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 self-start sm:self-center">0 Batches</span>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b swp-border swp-elevated/60 text-[11px] font-bold uppercase tracking-wider swp-text-sec">
+                    <th class="py-3 px-4">Batch</th>
+                    <th class="py-3 px-4">Exam</th>
+                    <th class="py-3 px-4">Hierarchy</th>
+                    <th class="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-batches-tbody" class="divide-y swp-border text-xs sm:text-sm"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="lg:col-span-4 rounded-2xl swp-card border swp-border p-5 space-y-4 shadow-sm self-start">
+            <div class="flex items-center gap-2.5 border-b swp-border pb-3">
+              <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                <i class="fa-solid fa-gear"></i>
               </div>
               <div>
-                <label class="block text-xs font-semibold swp-text-sec mb-1">Accent Color</label>
-                <select id="subject-color-input" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500">
-                  <option value="indigo">Indigo</option>
-                  <option value="purple">Purple</option>
-                  <option value="emerald">Emerald</option>
-                  <option value="amber">Amber</option>
-                  <option value="rose">Rose</option>
-                  <option value="cyan">Cyan</option>
-                </select>
+                <h2 class="text-base font-bold swp-text">Portal Settings</h2>
+                <p class="text-[11px] swp-text-sec">Admin PIN & Optional YouTube API v3 Key</p>
               </div>
             </div>
 
-            <div class="flex items-center gap-2">
-              <button type="submit" class="flex-1 py-2 px-4 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5">
-                <i class="fa-solid fa-plus"></i>
-                <span id="subject-save-btn-text">Add Subject</span>
+            <form id="global-settings-form" class="space-y-3.5">
+              <div>
+                <label class="block text-xs font-semibold swp-text-sec mb-1">Admin Security PIN *</label>
+                <input id="settings-pin-input" type="password" required minlength="4" placeholder="Default: 1234" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold swp-text-sec mb-1">YouTube Data API v3 Key <span class="swp-text-muted font-normal">(Optional)</span></label>
+                <input id="settings-ytkey-input" type="text" placeholder="AIzaSy... (Blank = Free Auto-Sync)" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
+              </div>
+              <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-key"></i>
+                <span>Save Global Settings</span>
               </button>
-              <button type="button" id="subject-cancel-edit-btn" class="hidden py-2 px-3 rounded-xl swp-elevated swp-text text-xs font-semibold">Cancel</button>
-            </div>
-          </form>
-
-          <div class="border-t swp-border pt-3 space-y-2">
-            <div class="flex items-center justify-between text-xs swp-text-sec">
-              <span>Subjects in Batch:</span>
-              <span id="admin-subjects-count" class="font-bold text-purple-400">0</span>
-            </div>
-            <div id="admin-subjects-list" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+            </form>
           </div>
         </div>
+      </section>
 
-        <!-- STEP 3: ADD MULTIPLE PLAYLISTS & SINGLE VIDEOS -->
-        <div id="admin-content-card" class="lg:col-span-4 rounded-2xl swp-card border swp-border p-5 space-y-4 shadow-sm">
-          <div class="flex items-center justify-between border-b swp-border pb-3">
-            <div class="flex items-center gap-2.5">
-              <span class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold text-xs flex items-center justify-center">3</span>
-              <div>
-                <h2 class="text-base font-bold swp-text">Add Playlists & Videos</h2>
-                <p class="text-[11px] swp-text-sec">Attach chapters or single classes to a Subject</p>
-              </div>
-            </div>
-          </div>
+    </main>
 
-          <form id="content-crud-form" class="space-y-3">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div>
-                <label class="block text-xs font-semibold swp-text-sec mb-1">Batch *</label>
-                <select id="admin-content-batch-select" required class="w-full px-2.5 py-2 rounded-xl swp-input border swp-border text-xs focus:outline-none focus:border-indigo-500">
-                  <option value="">-- Batch --</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-xs font-semibold swp-text-sec mb-1">Subject *</label>
-                <select id="admin-content-subject-select" required class="w-full px-2.5 py-2 rounded-xl swp-input border swp-border text-xs focus:outline-none focus:border-indigo-500">
-                  <option value="">-- Subject --</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold swp-text-sec mb-1">Content Type *</label>
-              <select id="content-type-input" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500">
-                <option value="playlist">📚 YouTube Playlist (Full Chapter)</option>
-                <option value="video">🎬 Single Recorded Lecture (Video URL/ID)</option>
-                <option value="live">🔴 Live Stream Session (Live URL/ID)</option>
-              </select>
-            </div>
-
-            <div>
-              <label id="content-title-label" class="block text-xs font-semibold swp-text-sec mb-1">Chapter / Playlist Title *</label>
-              <input id="content-title-input" type="text" required placeholder="e.g., Ch 01: Electrostatics Playlist" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
-            </div>
-
-            <div>
-              <label id="content-url-label" class="block text-xs font-semibold swp-text-sec mb-1">YouTube Playlist URL or ID *</label>
-              <input id="content-url-input" type="text" required placeholder="https://youtube.com/playlist?list=PL... or watch?v=..." class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
-            </div>
-
-            <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-md">
-              <i class="fa-solid fa-circle-plus"></i>
-              <span>Add to Subject</span>
-            </button>
-          </form>
-
-          <div class="border-t swp-border pt-3 space-y-2">
-            <div class="flex items-center justify-between text-xs swp-text-sec">
-              <span>Modules in Subject:</span>
-              <span id="admin-contents-count" class="font-bold text-emerald-400">0</span>
-            </div>
-            <div id="admin-contents-list" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
-          </div>
-        </div>
-
+    <!-- FOOTER -->
+    <footer class="border-t swp-border py-5 mt-12 text-center text-xs swp-text-muted">
+      <div class="max-w-[1440px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <p>© 2026 <span class="swp-text font-semibold">Study With Pro</span> — Personal Focus & Anti-Distraction Study Portal.</p>
+        <p class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span>Authenticated Cloud Sync Active</span>
+        </p>
       </div>
+    </footer>
 
-      <!-- BATCHES DIRECTORY + GLOBAL SETTINGS -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div class="lg:col-span-8 rounded-2xl swp-card border swp-border overflow-hidden shadow-sm">
-          <div class="p-5 border-b swp-border flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h2 class="text-base font-bold swp-text">All Study Batches Directory</h2>
-              <p class="text-xs swp-text-sec">Edit batches, manage subjects, or delete batches</p>
-            </div>
-            <span id="admin-total-batches" class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 self-start sm:self-center">0 Batches</span>
-          </div>
-
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="border-b swp-border swp-elevated/60 text-[11px] font-bold uppercase tracking-wider swp-text-sec">
-                  <th class="py-3 px-4">Batch</th>
-                  <th class="py-3 px-4">Exam</th>
-                  <th class="py-3 px-4">Hierarchy</th>
-                  <th class="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="admin-batches-tbody" class="divide-y swp-border text-xs sm:text-sm"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="lg:col-span-4 rounded-2xl swp-card border swp-border p-5 space-y-4 shadow-sm self-start">
-          <div class="flex items-center gap-2.5 border-b swp-border pb-3">
-            <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
-              <i class="fa-solid fa-gear"></i>
-            </div>
-            <div>
-              <h2 class="text-base font-bold swp-text">Portal Settings</h2>
-              <p class="text-[11px] swp-text-sec">Admin PIN & Optional YouTube API v3 Key</p>
-            </div>
-          </div>
-
-          <form id="global-settings-form" class="space-y-3.5">
-            <div>
-              <label class="block text-xs font-semibold swp-text-sec mb-1">Admin Security PIN *</label>
-              <input id="settings-pin-input" type="password" required minlength="4" placeholder="Default: 1234" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold swp-text-sec mb-1">YouTube Data API v3 Key <span class="swp-text-muted font-normal">(Optional)</span></label>
-              <input id="settings-ytkey-input" type="text" placeholder="AIzaSy... (Blank = Free Auto-Sync)" class="w-full px-3 py-2 rounded-xl swp-input border swp-border text-xs sm:text-sm focus:outline-none focus:border-indigo-500" />
-            </div>
-            <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-2">
-              <i class="fa-solid fa-key"></i>
-              <span>Save Global Settings</span>
-            </button>
-          </form>
-        </div>
-      </div>
-    </section>
-
-  </main>
+  </div>
 
   <!-- ==========================================================
        MODALS (ADMIN PIN, DELETE CONFIRMATION, PWA INSTALL GUIDE)
@@ -1547,23 +1746,12 @@
   <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toast-container" class="fixed top-16 sm:top-20 right-3 sm:right-4 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none"></div>
 
-  <!-- FOOTER -->
-  <footer class="border-t swp-border py-5 mt-12 text-center text-xs swp-text-muted">
-    <div class="max-w-[1440px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-      <p>© 2026 <span class="swp-text font-semibold">Study With Pro</span> — Personal Focus & Anti-Distraction Study Portal.</p>
-      <p class="flex items-center gap-2">
-        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-        <span>Singleton Player & Realtime Sync Active</span>
-      </p>
-    </div>
-  </footer>
-
   <!-- ==========================================================
-       APPLICATION CORE LOGIC (SINGLETON YT PLAYER + 5 BUG FIXES)
+       APPLICATION CORE LOGIC (AUTH GUARD + HIDDEN YT UI + SINGLETON PLAYER)
        ========================================================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
-    import { getDatabase, ref, set, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js";
+    import { getDatabase, ref, set, push, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js";
 
     // ----------------------------------------------------------
     // 1. FIREBASE INITIALIZATION
@@ -1634,7 +1822,7 @@
 
         if ("serviceWorker" in navigator && (window.location.protocol === "https:" || window.location.hostname === "localhost")) {
           const swCode = `
-            const CACHE_NAME = 'study-with-pro-v3';
+            const CACHE_NAME = 'study-with-pro-v4';
             self.addEventListener('install', (e) => self.skipWaiting());
             self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
             self.addEventListener('fetch', (e) => {
@@ -1668,7 +1856,7 @@
     }
 
     // ----------------------------------------------------------
-    // 3. GLOBAL STATE & RESUME SCHEMA (study_resume_state)
+    // 3. GLOBAL STATE & USER AUTHENTICATION STATE
     // ----------------------------------------------------------
     const DEFAULT_THUMBNAIL = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80";
     const DEFAULT_CATEGORIES = ["All", "JEE", "NEET", "Class 12", "Class 10", "Coding"];
@@ -1695,6 +1883,7 @@
     let currentVideoId = null;
 
     const state = {
+      currentUser: safeJsonParse("swp_logged_in_user", null),
       theme: localStorage.getItem("swp_theme") || "dark",
       currentView: "home",
       isTheaterMode: false,
@@ -1739,7 +1928,189 @@
     };
 
     // ----------------------------------------------------------
-    // 4. STRICT SINGLETON YOUTUBE PLAYER + BUG 2, 3, 5 FIXES
+    // 4. LOGIN & SIGN UP AUTH GUARD SYSTEM
+    // ----------------------------------------------------------
+    function sanitizeUserKey(rawUsername) {
+      return String(rawUsername || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "_");
+    }
+
+    function applyAuthGuardUI() {
+      const authScreen = document.getElementById("view-auth");
+      const appShell = document.getElementById("protected-app-shell");
+
+      if (!state.currentUser || !state.currentUser.id) {
+        authScreen.classList.remove("hidden");
+        appShell.classList.add("hidden");
+        if (window.activeYTPlayer && window.isYTPlayerReady && typeof window.activeYTPlayer.pauseVideo === "function") {
+          try { window.activeYTPlayer.pauseVideo(); } catch (e) {}
+        }
+        return;
+      }
+
+      authScreen.classList.add("hidden");
+      appShell.classList.remove("hidden");
+
+      const firstName = (state.currentUser.name || state.currentUser.username || "Scholar").split(" ")[0];
+      document.getElementById("nav-user-badge").textContent = `👤 ${firstName}`;
+      document.getElementById("welcome-user-greeting").textContent = `Welcome back, ${state.currentUser.name || firstName}! (${state.currentUser.targetExam || "Focus Mode"})`;
+
+      initUserPersonalDataListeners(state.currentUser.id);
+    }
+
+    function initUserPersonalDataListeners(userId) {
+      if (!userId) return;
+
+      // Sync User's Personal Resume State
+      onValue(ref(db, `userData/${userId}/study_resume_state`), (snapshot) => {
+        const remoteResume = snapshot.val();
+        if (remoteResume && remoteResume.videoId) {
+          const localTime = state.studyResumeState?.updatedAt || 0;
+          if ((remoteResume.updatedAt || 0) >= localTime) {
+            state.studyResumeState = remoteResume;
+            localStorage.setItem("study_resume_state", JSON.stringify(remoteResume));
+            if (state.currentView === "home") renderHomeResumeBanner();
+          }
+        }
+      });
+
+      // Sync User's Completed Lectures
+      onValue(ref(db, `userData/${userId}/completedLectures`), (snapshot) => {
+        const remoteCompleted = snapshot.val();
+        if (remoteCompleted && typeof remoteCompleted === "object") {
+          state.completedLectures = { ...state.completedLectures, ...remoteCompleted };
+          localStorage.setItem("swp_completed_lectures", JSON.stringify(state.completedLectures));
+          if (state.currentView === "home") renderBatchesGrid();
+          if (state.currentView === "classroom") {
+            updateActiveLectureHeaderUI();
+            renderSidebarLectureItems();
+            renderClassroomSubjectsBar();
+            renderSubjectContentsSelector();
+          }
+        }
+      });
+
+      // Sync User's Personal Study Notes
+      onValue(ref(db, `userData/${userId}/studyNotes`), (snapshot) => {
+        const remoteNotes = snapshot.val();
+        if (remoteNotes && typeof remoteNotes === "object") {
+          state.studyNotesAll = remoteNotes;
+          localStorage.setItem("swp_study_notes", JSON.stringify(state.studyNotesAll));
+          if (state.currentView === "classroom") renderStudyNotesList();
+        }
+      });
+    }
+
+    async function handleUserSignup(e) {
+      e.preventDefault();
+      const name = document.getElementById("signup-name-input").value.trim();
+      const usernameRaw = document.getElementById("signup-username-input").value.trim();
+      const targetExam = document.getElementById("signup-exam-input").value;
+      const password = document.getElementById("signup-password-input").value;
+
+      const userKey = sanitizeUserKey(usernameRaw);
+      if (!userKey || userKey.length < 3) {
+        showToast("Username/Email must have at least 3 valid characters.", "warning");
+        return;
+      }
+
+      const submitBtn = document.getElementById("signup-submit-btn");
+      submitBtn.disabled = true;
+
+      try {
+        const existingSnap = await get(ref(db, `users/${userKey}`));
+        if (existingSnap.exists()) {
+          showToast("This username/email is already registered. Please Login!", "error");
+          submitBtn.disabled = false;
+          return;
+        }
+
+        const newUser = {
+          id: userKey,
+          name,
+          username: usernameRaw,
+          targetExam,
+          password,
+          createdAt: Date.now()
+        };
+
+        await set(ref(db, `users/${userKey}`), newUser);
+
+        const sessionUser = { id: newUser.id, name: newUser.name, username: newUser.username, targetExam: newUser.targetExam };
+        state.currentUser = sessionUser;
+        localStorage.setItem("swp_logged_in_user", JSON.stringify(sessionUser));
+
+        showToast(`Account created! Welcome, ${name}!`, "success");
+        applyAuthGuardUI();
+        switchView("home");
+      } catch (err) {
+        showToast("Error creating account. Please check your connection.", "error");
+      } finally {
+        submitBtn.disabled = false;
+      }
+    }
+
+    async function handleUserLogin(e) {
+      e.preventDefault();
+      const usernameRaw = document.getElementById("login-username-input").value.trim();
+      const password = document.getElementById("login-password-input").value;
+      const userKey = sanitizeUserKey(usernameRaw);
+
+      if (!userKey) {
+        showToast("Please enter a valid username or email.", "warning");
+        return;
+      }
+
+      const submitBtn = document.getElementById("login-submit-btn");
+      submitBtn.disabled = true;
+
+      try {
+        const userSnap = await get(ref(db, `users/${userKey}`));
+        if (!userSnap.exists()) {
+          showToast("Account not found! Please Sign Up first.", "error");
+          submitBtn.disabled = false;
+          return;
+        }
+
+        const userData = userSnap.val();
+        if (String(userData.password) !== String(password)) {
+          showToast("Incorrect password! Please try again.", "error");
+          submitBtn.disabled = false;
+          return;
+        }
+
+        const sessionUser = {
+          id: userData.id || userKey,
+          name: userData.name || usernameRaw,
+          username: userData.username || usernameRaw,
+          targetExam: userData.targetExam || "JEE"
+        };
+
+        state.currentUser = sessionUser;
+        localStorage.setItem("swp_logged_in_user", JSON.stringify(sessionUser));
+
+        showToast(`Welcome back, ${sessionUser.name}!`, "success");
+        applyAuthGuardUI();
+        switchView("home");
+      } catch (err) {
+        showToast("Login failed. Please check your internet connection.", "error");
+      } finally {
+        submitBtn.disabled = false;
+      }
+    }
+
+    function handleUserLogout() {
+      persistStudyResumeState(true);
+      state.currentUser = null;
+      localStorage.removeItem("swp_logged_in_user");
+      showToast("Logged out successfully.", "info");
+      applyAuthGuardUI();
+    }
+
+    // ----------------------------------------------------------
+    // 5. STRICT SINGLETON YOUTUBE PLAYER & HIDDEN YT UI MASKS
     // ----------------------------------------------------------
     window.activeYTPlayer = null;
     window.isYTPlayerReady = false;
@@ -1785,7 +2156,6 @@
       const mountEl = document.getElementById("yt-player");
       if (!mountEl || !window.YT || !window.YT.Player) return null;
 
-      // BUG 3 FIX: Enforce cc_load_policy: 0, iv_load_policy: 3, hl: 'en'
       window.activeYTPlayer = new window.YT.Player("yt-player", {
         height: "100%",
         width: "100%",
@@ -1830,6 +2200,27 @@
       overlay.classList.toggle("hidden", !visible);
     }
 
+    function updatePosterAndPauseMasks(playerState) {
+      const posterOverlay = document.getElementById("player-poster-overlay");
+      const pauseMask = document.getElementById("player-pause-mask");
+      if (!posterOverlay || !pauseMask || !window.YT) return;
+
+      const YTState = window.YT.PlayerState;
+      if (playerState === YTState.PLAYING) {
+        posterOverlay.classList.add("hidden");
+        pauseMask.classList.add("hidden");
+      } else if (playerState === YTState.BUFFERING) {
+        posterOverlay.classList.add("hidden");
+        pauseMask.classList.add("hidden");
+      } else if (playerState === YTState.PAUSED) {
+        posterOverlay.classList.add("hidden");
+        pauseMask.classList.remove("hidden");
+      } else if (playerState === YTState.CUED || playerState === YTState.UNSTARTED || playerState === YTState.ENDED) {
+        posterOverlay.classList.remove("hidden");
+        pauseMask.classList.add("hidden");
+      }
+    }
+
     function syncPlayPauseButtonIcon(playerState) {
       const playIcon = document.getElementById("ctrl-play-icon");
       if (!playIcon || !window.YT) return;
@@ -1846,10 +2237,10 @@
       const YTState = window.YT.PlayerState;
       const st = event.data;
 
-      // BUG 5 FIX: Always keep Play/Pause button strictly synced with actual video state
       syncPlayPauseButtonIcon(st);
+      updatePosterAndPauseMasks(st);
 
-      // BUG 2 FIX: Enforce selected quality on BUFFERING or PLAYING
+      // Enforce selected quality on BUFFERING or PLAYING
       if (st === YTState.BUFFERING || st === YTState.PLAYING) {
         if (currentQuality && currentQuality !== "default") {
           try {
@@ -1858,7 +2249,7 @@
         }
       }
 
-      // BUG 3 FIX: Force unload auto-captions / subtitles on PLAYING or CUED
+      // Unload auto-captions / subtitles on PLAYING or CUED
       if (st === YTState.PLAYING || st === YTState.CUED) {
         try {
           event.target.unloadModule("captions");
@@ -1905,11 +2296,9 @@
           ? (window.activeYTPlayer.getVideoLoadedFraction() || 0)
           : 0;
 
-        // Update live timestamp inside the "+Note" button
         const noteBtnTime = document.getElementById("note-live-timestamp-btn");
         if (noteBtnTime) noteBtnTime.textContent = `[${formatTime(current)}]`;
 
-        // Detect Live Stream
         const activeLecture = state.activeLectureList[state.activeLectureIndex];
         const playerState = window.activeYTPlayer.getPlayerState ? window.activeYTPlayer.getPlayerState() : -1;
         currentVideoIsLive = Boolean((activeLecture && activeLecture.isLive) || (playerState === 1 && duration === 0));
@@ -1923,13 +2312,11 @@
           liveControls.classList.remove("flex");
         }
 
-        // Update Buffered Bar
         const bufferedBar = document.getElementById("seek-buffered-bar");
         if (bufferedBar) {
           bufferedBar.style.width = `${Math.min(100, Math.max(0, loadedFrac * 100))}%`;
         }
 
-        // Do not overwrite seekbar while user is actively scrubbing
         const recentlyScrubbed = Date.now() - lastScrubTime < 350;
         if (!isScrubbing && !recentlyScrubbed) {
           document.getElementById("current-time-text").textContent = formatTime(current);
@@ -1947,7 +2334,6 @@
           }
         }
 
-        // Throttle-save currentTime every 3 seconds while playing
         if (playerState === 1 && current > 2 && Date.now() - lastThrottleSaveTime >= 3000) {
           persistStudyResumeState(false, current);
         }
@@ -1955,7 +2341,7 @@
     }
 
     // ----------------------------------------------------------
-    // 5. EXACT RESUME ENGINE (study_resume_state)
+    // 6. EXACT RESUME ENGINE (SYNCED PER USER)
     // ----------------------------------------------------------
     function persistStudyResumeState(syncToFirebase = false, overrideSeconds = null) {
       if (!state.activeBatchId || !state.activeVideoId) return;
@@ -1990,8 +2376,8 @@
       localStorage.setItem("swp_batch_resume_map", JSON.stringify(state.batchResumeMap));
       localStorage.setItem("swp_video_timestamps", JSON.stringify(state.videoTimestamps));
 
-      if (syncToFirebase) {
-        set(ref(db, "study_resume_state"), resumePayload).catch(() => {});
+      if (syncToFirebase && state.currentUser?.id) {
+        set(ref(db, `userData/${state.currentUser.id}/study_resume_state`), resumePayload).catch(() => {});
       }
     }
 
@@ -2018,7 +2404,7 @@
     }
 
     // ----------------------------------------------------------
-    // 6. SCREEN FIT / ZOOM TOGGLE + PINCH-TO-ZOOM + GESTURE ENGINE
+    // 7. SCREEN FIT / ZOOM TOGGLE + PINCH-TO-ZOOM + GESTURE ENGINE
     // ----------------------------------------------------------
     let lastTapTime = 0;
     let singleTapTimeout = null;
@@ -2060,11 +2446,24 @@
     function initPlayerGestureShield() {
       const shield = document.getElementById("player-shield");
       const wrapper = document.getElementById("player-wrapper");
+      const posterOverlay = document.getElementById("player-poster-overlay");
       if (!shield || !wrapper) return;
 
       wrapper.addEventListener("contextmenu", (e) => e.preventDefault());
 
-      // Two-Finger Pinch-Out / Pinch-In Gesture on #player-shield for Zoom-to-Fill
+      // Clicking Custom Poster Overlay starts playback immediately hiding YouTube red button
+      if (posterOverlay) {
+        posterOverlay.addEventListener("click", (e) => {
+          e.stopPropagation();
+          posterOverlay.classList.add("hidden");
+          setBufferingSpinner(true, "Starting Lecture...");
+          if (window.activeYTPlayer && window.isYTPlayerReady && typeof window.activeYTPlayer.playVideo === "function") {
+            window.activeYTPlayer.playVideo();
+          }
+        });
+      }
+
+      // Two-Finger Pinch-Out / Pinch-In Gesture on #player-shield
       shield.addEventListener("touchstart", (e) => {
         if (e.touches && e.touches.length === 2) {
           if (hold2xTimeout) {
@@ -2207,7 +2606,7 @@
     }
 
     // ----------------------------------------------------------
-    // 7. UTILITY & URL PARSER FUNCTIONS
+    // 8. UTILITY & URL PARSER FUNCTIONS
     // ----------------------------------------------------------
     function extractPlaylistId(input) {
       if (!input || typeof input !== "string") return "";
@@ -2275,7 +2674,7 @@
     }
 
     // ----------------------------------------------------------
-    // 8. LIGHT & DARK THEME ENGINE
+    // 9. LIGHT & DARK THEME ENGINE & POMODORO
     // ----------------------------------------------------------
     function applyTheme(theme) {
       state.theme = theme === "light" ? "light" : "dark";
@@ -2297,9 +2696,6 @@
       }
     }
 
-    // ----------------------------------------------------------
-    // 9. POMODORO FOCUS TIMER
-    // ----------------------------------------------------------
     function updatePomodoroUI() {
       document.getElementById("pomodoro-time-display").textContent = formatTime(state.pomoSecondsLeft);
       document.getElementById("pomodoro-mode-badge").textContent = state.pomoModeLabel;
@@ -2467,19 +2863,6 @@
         document.getElementById("settings-ytkey-input").value = state.ytApiKey;
       });
 
-      const resumeRef = ref(db, "study_resume_state");
-      onValue(resumeRef, (snapshot) => {
-        const remoteResume = snapshot.val();
-        if (remoteResume && remoteResume.videoId) {
-          const localTime = state.studyResumeState?.updatedAt || 0;
-          if ((remoteResume.updatedAt || 0) > localTime) {
-            state.studyResumeState = remoteResume;
-            localStorage.setItem("study_resume_state", JSON.stringify(remoteResume));
-            if (state.currentView === "home") renderHomeResumeBanner();
-          }
-        }
-      });
-
       const batchesRef = ref(db, "batches");
       onValue(batchesRef, (snapshot) => {
         state.batches = snapshot.val() || {};
@@ -2496,19 +2879,12 @@
           renderSubjectContentsSelector();
         }
 
-        if (!state.deepLinkHandled) {
+        if (!state.deepLinkHandled && state.currentUser) {
           state.deepLinkHandled = true;
           const params = new URLSearchParams(window.location.search);
           const bId = params.get("batch");
           if (bId && state.batches[bId]) openClassroomBatch(bId);
         }
-      });
-
-      const notesRef = ref(db, "studyNotes");
-      onValue(notesRef, (snapshot) => {
-        state.studyNotesAll = snapshot.val() || {};
-        localStorage.setItem("swp_study_notes", JSON.stringify(state.studyNotesAll));
-        if (state.currentView === "classroom") renderStudyNotesList();
       });
     }
 
@@ -2516,6 +2892,11 @@
     // 12. VIEW SWITCHING & HOME PANEL RENDERING
     // ----------------------------------------------------------
     function switchView(viewName) {
+      if (!state.currentUser) {
+        applyAuthGuardUI();
+        return;
+      }
+
       state.currentView = viewName;
       document.getElementById("view-home").classList.toggle("hidden", viewName !== "home");
       document.getElementById("view-classroom").classList.toggle("hidden", viewName !== "classroom");
@@ -3049,6 +3430,13 @@
         ? Math.floor(startSeconds)
         : Math.floor(state.videoTimestamps[lecture.ytVideoId] || 0);
 
+      // Update Custom Poster Overlay with High-Res Lecture Thumbnail & Title
+      const posterOverlay = document.getElementById("player-poster-overlay");
+      const posterImg = document.getElementById("player-poster-img");
+      const posterTitle = document.getElementById("player-poster-title");
+      if (posterImg) posterImg.src = `https://i.ytimg.com/vi/${lecture.ytVideoId}/hqdefault.jpg`;
+      if (posterTitle) posterTitle.textContent = lecture.title || "Tap to Start Lecture";
+
       updateActiveLectureHeaderUI();
       renderSidebarLectureItems();
       renderStudyNotesList();
@@ -3063,12 +3451,14 @@
         }
 
         if (autoPlay) {
+          if (posterOverlay) posterOverlay.classList.add("hidden");
           setBufferingSpinner(true, "Loading Lecture...");
           player.loadVideoById(loadPayload);
           if (seekSec > 5) {
             showToast(`Resumed "${lecture.title}" at ${formatTime(seekSec)}`, "info");
           }
         } else {
+          if (posterOverlay) posterOverlay.classList.remove("hidden");
           setBufferingSpinner(false);
           player.cueVideoById(loadPayload);
           syncPlayPauseButtonIcon(window.YT ? window.YT.PlayerState.CUED : 5);
@@ -3096,7 +3486,11 @@
                 target.title = data.title;
                 target.thumbnail = state.oembedCache[vid].thumbnail;
               }
-              if (state.activeVideoId === vid) updateActiveLectureHeaderUI();
+              if (state.activeVideoId === vid) {
+                updateActiveLectureHeaderUI();
+                const posterTitle = document.getElementById("player-poster-title");
+                if (posterTitle) posterTitle.textContent = data.title;
+              }
               renderSidebarLectureItems();
             }
           }
@@ -3106,7 +3500,7 @@
     }
 
     // ----------------------------------------------------------
-    // 14. BUG 2 FIX: VIDEO QUALITY & SPEED OVERLAY MENUS
+    // 14. VIDEO QUALITY & SPEED OVERLAY MENUS
     // ----------------------------------------------------------
     function openPlayerSettingsMenu(type) {
       const modal = document.getElementById("player-menu-modal");
@@ -3152,7 +3546,6 @@
           }`;
           btn.innerHTML = `<span>${item.label}</span>${isCurrent ? '<i class="fa-solid fa-check text-[10px]"></i>' : ""}`;
 
-          // BUG 2 EXACT JS FIX: Reload with suggestedQuality while preserving time, rate, and play state
           btn.addEventListener("click", () => {
             const selectedQuality = item.q;
             currentQuality = selectedQuality;
@@ -3212,7 +3605,7 @@
     }
 
     // ----------------------------------------------------------
-    // 15. SIDEBAR QUEUE & STUDY NOTES RENDERING
+    // 15. SIDEBAR QUEUE & STUDY NOTES RENDERING (USER SCOPED)
     // ----------------------------------------------------------
     function updateActiveLectureHeaderUI() {
       const lecture = state.activeLectureList[state.activeLectureIndex];
@@ -3248,6 +3641,10 @@
       if (next) state.completedLectures[key] = true;
       else delete state.completedLectures[key];
       localStorage.setItem("swp_completed_lectures", JSON.stringify(state.completedLectures));
+
+      if (state.currentUser?.id) {
+        set(ref(db, `userData/${state.currentUser.id}/completedLectures`), state.completedLectures).catch(() => {});
+      }
 
       updateActiveLectureHeaderUI();
       renderSidebarLectureItems();
@@ -3353,10 +3750,12 @@
       localStorage.setItem("swp_study_notes", JSON.stringify(state.studyNotesAll));
       renderStudyNotesList();
 
-      try {
-        await set(ref(db, `studyNotes/${state.activeBatchId}/${state.activeVideoId}/${noteObj.id}`), noteObj);
-        showToast(`Saved note at [${noteObj.formattedTime}]`, "success");
-      } catch (e) {}
+      if (state.currentUser?.id) {
+        try {
+          await set(ref(db, `userData/${state.currentUser.id}/studyNotes/${state.activeBatchId}/${state.activeVideoId}/${noteObj.id}`), noteObj);
+          showToast(`Saved note at [${noteObj.formattedTime}]`, "success");
+        } catch (e) {}
+      }
     }
 
     function renderStudyNotesList() {
@@ -3398,7 +3797,9 @@
           delete state.studyNotesAll[state.activeBatchId][state.activeVideoId][n.id];
           localStorage.setItem("swp_study_notes", JSON.stringify(state.studyNotesAll));
           renderStudyNotesList();
-          remove(ref(db, `studyNotes/${state.activeBatchId}/${state.activeVideoId}/${n.id}`)).catch(() => {});
+          if (state.currentUser?.id) {
+            remove(ref(db, `userData/${state.currentUser.id}/studyNotes/${state.activeBatchId}/${state.activeVideoId}/${n.id}`)).catch(() => {});
+          }
         });
         container.appendChild(div);
       });
@@ -3414,6 +3815,7 @@
         window.activeYTPlayer.pauseVideo();
         if (showRipple) triggerCenterRipple("fa-pause");
       } else {
+        document.getElementById("player-poster-overlay").classList.add("hidden");
         window.activeYTPlayer.playVideo();
         if (showRipple) triggerCenterRipple("fa-play");
       }
@@ -3423,7 +3825,7 @@
       const ripple = document.getElementById("player-center-ripple");
       const icon = document.getElementById("player-center-ripple-icon");
       if (!ripple || !icon) return;
-      icon.className = `fa-solid ${iconClass} text-xl sm:text-2xl`;
+      icon.className = `fa-solid ${iconClass} text-2xl`;
       ripple.classList.remove("hidden", "ripple-animate");
       void ripple.offsetWidth;
       ripple.classList.add("ripple-animate");
@@ -3713,6 +4115,33 @@
     // 18. BIND ALL DOM EVENTS
     // ----------------------------------------------------------
     function bindAllEvents() {
+      // Auth Tabs & Forms
+      const loginTab = document.getElementById("auth-tab-login");
+      const signupTab = document.getElementById("auth-tab-signup");
+      const loginForm = document.getElementById("auth-login-form");
+      const signupForm = document.getElementById("auth-signup-form");
+
+      function switchAuthTab(mode) {
+        if (mode === "signup") {
+          signupTab.className = "py-2.5 rounded-xl bg-indigo-600 text-white shadow transition";
+          loginTab.className = "py-2.5 rounded-xl swp-text-sec hover:text-indigo-400 transition";
+          loginForm.classList.add("hidden");
+          signupForm.classList.remove("hidden");
+        } else {
+          loginTab.className = "py-2.5 rounded-xl bg-indigo-600 text-white shadow transition";
+          signupTab.className = "py-2.5 rounded-xl swp-text-sec hover:text-indigo-400 transition";
+          signupForm.classList.add("hidden");
+          loginForm.classList.remove("hidden");
+        }
+      }
+
+      loginTab.addEventListener("click", () => switchAuthTab("login"));
+      signupTab.addEventListener("click", () => switchAuthTab("signup"));
+      document.getElementById("switch-to-signup-link").addEventListener("click", () => switchAuthTab("signup"));
+      loginForm.addEventListener("submit", handleUserLogin);
+      signupForm.addEventListener("submit", handleUserSignup);
+      document.getElementById("user-logout-btn").addEventListener("click", handleUserLogout);
+
       // PWA Install Button & Modal
       document.getElementById("pwa-install-btn").addEventListener("click", async () => {
         if (deferredInstallPrompt) {
@@ -3971,7 +4400,7 @@
 
       // Keyboard Shortcuts
       document.addEventListener("keydown", (e) => {
-        if (state.currentView !== "classroom") return;
+        if (!state.currentUser || state.currentView !== "classroom") return;
         if (e.altKey && e.key.toLowerCase() === "n") {
           e.preventDefault();
           const input = document.getElementById("study-note-input");
@@ -4134,6 +4563,7 @@
     initProgressiveWebApp();
     initPlayerGestureShield();
     bindAllEvents();
+    applyAuthGuardUI();
     loadYouTubeIframeApiScriptOnce();
     initFirebaseSync();
   </script>
